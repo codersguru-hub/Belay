@@ -1,0 +1,36 @@
+{
+  "name": "agentmesh",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first control plane for heterogeneous coding agents.",
+  "workspaces": [
+    "packages/contracts",
+    "packages/cloud-service",
+    "packages/dashboard",
+    "packages/daemon"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "npm run dev --workspace @agentmesh/daemon",
+    "start": "npm run start --workspace @agentmesh/daemon",
+    "test": "npm run build && vitest run",
+    "benchmark:indexer": "npm run build && node scripts/benchmark-indexer.mjs",
+    "smoke:phase1": "node --experimental-strip-types scripts/smoke-phase1.ts",
+    "demo:request-approval": "node scripts/request-demo-approval.mjs",
+    "demo:verify": "npm run build && vitest run tests/hero-demo.integration.test.ts --reporter=verbose",
+    "smoke:cloud": "node scripts/smoke-cloud.mjs",
+    "verify:no-leaks": "npm run build && vitest run tests/executor.security.test.ts tests/cloud-egress.integration.test.ts tests/hero-demo.integration.test.ts --reporter=verbose"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

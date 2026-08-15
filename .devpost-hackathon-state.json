@@ -1,0 +1,47 @@
+{
+  "plugin": "devpost-hackathon",
+  "version": 2,
+  "hackathon": {
+    "slug": "allthingsagentichackathon",
+    "name": "All Things Agentic Hackathon",
+    "url": "https://allthingsagentichackathon.devpost.com",
+    "selected": true,
+    "source": "search"
+  },
+  "participant": {
+    "name": "",
+    "display_name": "Ahmed Soliman"
+  },
+  "project": {
+    "name": "AgentMesh",
+    "summary": "A local control plane for heterogeneous coding agents with shared state, deterministic token-efficient repository indexing, zero-leak secret handling, and human-approved remote execution.",
+    "ai_usage": "",
+    "codex_usage": ""
+  },
+  "current_stage": "resources",
+  "completed_stages": [
+    "start-hackathon",
+    "review",
+    "resources"
+  ],
+  "rules_acknowledged": true,
+  "learning": {
+    "status": "completed",
+    "current_step": "build",
+    "completed_steps": [
+      "onboard",
+      "scope",
+      "prd",
+      "spec",
+      "checklist",
+      "build"
+    ],
+    "plan_file": "docs/hackathon-build/scope.md",
+    "checklist_file": "docs/hackathon-build/checklist.md"
+  },
+  "submission": {
+    "draft_file": "devpost-submission.md",
+    "status": "not-started"
+  },
+  "next_command": "prepare-submission"
+}

@@ -1,0 +1,40 @@
+flowchart LR
+  subgraph A["Trust Zone A · Independent agent clients"]
+    Claude["Claude Code"]
+    Codex["OpenAI Codex"]
+    Anti["Antigravity"]
+  end
+  subgraph B["Trust Zone B · Local AgentMesh control plane"]
+    MCP["Loopback MCP Streamable HTTP"]
+    Coordination["Coordination + leases"]
+    Indexer["Deterministic indexer"]
+    Vault["AES-GCM vault + age unwrap"]
+    Policy["Policy + immutable approvals"]
+    Executor["Registered shell-free executor"]
+    Egress["Exact-schema egress guard"]
+    SQLite[("SQLite WAL metadata")]
+  end
+  subgraph C["Trust Zone C · Local human cockpit"]
+    Dashboard["React dashboard"]
+  end
+  subgraph D["Trust Zone D · Advisory cloud intelligence"]
+    Run["Private Cloud Run service"]
+    Gemini["Genkit + Gemini"]
+  end
+  Claude --> MCP
+  Codex --> MCP
+  Anti --> MCP
+  MCP --> Coordination
+  MCP --> Indexer
+  MCP --> Policy
+  Coordination <--> SQLite
+  Indexer --> SQLite
+  Policy --> SQLite
+  Policy --> Executor
+  Vault --> Executor
+  Dashboard <-->|"sanitized REST + WebSocket"| B
+  Indexer --> Egress
+  SQLite -->|"high-level audit projection"| Egress
+  Egress -->|"allowlisted structural metadata only"| Run
+  Run --> Gemini
+  Gemini -->|"advisory structured summary"| Dashboard

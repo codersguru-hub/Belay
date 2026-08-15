@@ -1,0 +1,15 @@
+{
+  "name": "agentmesh-indexer-fixture",
+  "private": true,
+  "packageManager": "npm@10.9.3",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "dev": "vite --port 5173",
+    "serve": "node src/index.ts --port 4310",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "vite": "7.0.0"
+  }
+}

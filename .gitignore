@@ -1,0 +1,31 @@
+node_modules/
+.tools/
+dist/
+coverage/
+*.tsbuildinfo
+
+# AgentMesh local runtime state
+.agentmesh/
+state.db
+state.db-shm
+state.db-wal
+*.db-shm
+*.db-wal
+*.log
+
+# Secrets and local identities
+.env
+.env.*
+!.env.example
+!.env.schema.json
+*.vault
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
