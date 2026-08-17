@@ -12,7 +12,7 @@ export function registerLogCompletion(
     {
       title: "Log Completion",
       description:
-        "Complete an owned active task, release only its locks, and append shared agent memory atomically.",
+        "Complete an owned active task, its linked checklist item and verification evidence, release its locks, and append shared activity atomically.",
       inputSchema: LogCompletionInputSchema
     },
     async (input) => {
@@ -24,4 +24,3 @@ export function registerLogCompletion(
     }
   );
 }
-

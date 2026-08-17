@@ -1,31 +1,21 @@
-import { createAgentMeshApp } from "./app.js";
+import { main } from "./cli.js";
 
-const app = createAgentMeshApp();
-const endpoint = await app.start();
-
-process.stdout.write(`AgentMesh MCP listening at ${endpoint.mcpUrl}\n`);
-process.stdout.write(`State database: ${app.config.databasePath}\n`);
-process.stdout.write(`Project root: ${app.config.projectRoot}\n`);
-
-let shuttingDown = false;
-async function shutdown(): Promise<void> {
-  if (shuttingDown) {
-    return;
-  }
-  shuttingDown = true;
-  await app.close();
+// If executed directly as script, run CLI main
+if (process.argv[1]?.endsWith("index.js") || process.argv[1]?.endsWith("index.ts")) {
+  void main().catch((error) => {
+    process.stderr.write(`[AgentMesh Fatal] ${error instanceof Error ? error.stack ?? error.message : String(error)}\n`);
+    process.exit(1);
+  });
 }
 
-process.once("SIGINT", () => {
-  void shutdown().then(() => process.exit(0));
-});
-process.once("SIGTERM", () => {
-  void shutdown().then(() => process.exit(0));
-});
-
-export { createAgentMeshApp } from "./app.js";
+export { createAgentMeshApp, type AgentMeshApp, type CreateAgentMeshAppOptions } from "./app.js";
+export { loadConfig, type AgentMeshConfig, type ProjectConfigFile } from "./config.js";
 export { CoordinationService } from "./coordination/coordination-service.js";
 export { openStateDatabase } from "./db/connection.js";
 export { migrateDatabase } from "./db/migrate.js";
 export { bootstrapProject } from "./db/repositories/project-repository.js";
-
+export { ManifestService } from "./indexer/manifest-service.js";
+export { VaultService } from "./vault/vault-service.js";
+export { CommandExecutor } from "./executor/command-executor.js";
+export { ApprovalService } from "./approval/approval-service.js";
+export { CloudIntelligenceService } from "./cloud/cloud-intelligence-service.js";

@@ -10,6 +10,10 @@ function asStructuredValue(value: object): StructuredToolValue {
 
 function successSummary(value: StructuredToolValue): string {
   if (value.status === "pending" && typeof value.approvalId === "string") {
+    if (value.actionKind === "knowledge" && value.knowledge && typeof value.knowledge === "object") {
+      const knowledge = value.knowledge as Record<string, unknown>;
+      return `Knowledge proposal ${String(knowledge.knowledgeId)} is pending human approval until ${String(value.expiresAt)}.`;
+    }
     return `Action ${String(value.commandId)} is pending human approval until ${String(value.expiresAt)}.`;
   }
   if (typeof value.commandId === "string" && typeof value.status === "string") {
@@ -21,6 +25,23 @@ function successSummary(value: StructuredToolValue): string {
   if (value.status === "in_progress" && typeof value.heartbeatAt === "string") {
     return `Task ${String(value.taskId)} heartbeat accepted through ${String(value.leaseExpiresAt)}.`;
   }
+  if (value.status === "in_progress" && typeof value.progressAt === "string") {
+    return `Progress recorded for task ${String(value.taskId)}.`;
+  }
+  if (value.status === "blocked" && typeof value.blockedAt === "string") {
+    const releasedFiles = Array.isArray(value.releasedFiles) ? value.releasedFiles.length : 0;
+    return `Task ${String(value.taskId)} blocked; ${releasedFiles} lock(s) released.`;
+  }
+  if (value.item && typeof value.item === "object") {
+    const item = value.item as Record<string, unknown>;
+    return `Checklist item ${String(item.id)} is ${String(item.status)}.`;
+  }
+  if (Array.isArray(value.items) && typeof value.omittedItems === "number") {
+    if (value.workspace && typeof value.workspace === "object") {
+      return `Shared knowledge contains ${value.items.length} visible fact(s); ${value.omittedItems} omitted.`;
+    }
+    return `Shared checklist contains ${value.items.length} item(s); ${value.omittedItems} omitted.`;
+  }
   if (value.status === "in_progress") {
     const lockedFiles = Array.isArray(value.lockedFiles) ? value.lockedFiles.length : 0;
     return `Task ${String(value.taskId)} acquired with ${lockedFiles} file lock(s).`;
@@ -31,8 +52,12 @@ function successSummary(value: StructuredToolValue): string {
   }
   if (value.project && typeof value.project === "object") {
     const activeTasks = Array.isArray(value.activeTasks) ? value.activeTasks.length : 0;
+    const checklist = Array.isArray(value.checklist) ? value.checklist.length : 0;
+    const knowledge = value.knowledge && typeof value.knowledge === "object"
+      ? (value.knowledge as { items?: unknown[] }).items?.length ?? 0
+      : 0;
     const recentMemory = Array.isArray(value.recentMemory) ? value.recentMemory.length : 0;
-    return `Stage context contains ${activeTasks} active task(s) and ${recentMemory} recent memory event(s).`;
+    return `Stage context contains ${knowledge} approved fact(s), ${checklist} checklist item(s), ${activeTasks} active task(s), and ${recentMemory} recent activity event(s).`;
   }
   return "AgentMesh request completed.";
 }

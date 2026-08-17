@@ -9,7 +9,7 @@ export function registerAcquireTask(server: McpServer, coordination: Coordinatio
     {
       title: "Acquire Task",
       description:
-        "Atomically acquire a task and its complete repository-relative file set under one lease.",
+        "Atomically acquire a task and its complete repository-relative file set under one lease, optionally claiming a ready checklist item.",
       inputSchema: AcquireTaskInputSchema
     },
     async (input) => {
@@ -21,4 +21,3 @@ export function registerAcquireTask(server: McpServer, coordination: Coordinatio
     }
   );
 }
-

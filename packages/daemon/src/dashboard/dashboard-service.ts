@@ -53,6 +53,18 @@ export class DashboardService {
       agent.state = "active";
       knownAgents.set(task.agentName, agent);
     }
+    for (const item of context.checklist) {
+      for (const agentName of [item.proposedBy, item.ownerAgent]) {
+        if (agentName && !knownAgents.has(agentName)) {
+          knownAgents.set(agentName, { name: agentName, activeTasks: 0, state: "idle" });
+        }
+      }
+    }
+    for (const item of context.knowledge.items) {
+      if (!knownAgents.has(item.proposedBy)) {
+        knownAgents.set(item.proposedBy, { name: item.proposedBy, activeTasks: 0, state: "idle" });
+      }
+    }
     const lockedFiles = context.activeTasks.reduce(
       (total, task) => total + task.lockedFiles.length,
       0
@@ -70,9 +82,15 @@ export class DashboardService {
       summary: {
         activeTasks: context.activeTasks.length,
         lockedFiles,
-        pendingApprovals: pendingApprovals.length
+        pendingApprovals: pendingApprovals.length,
+        checklistPending: context.checklist.filter((item) => item.status === "pending").length,
+        checklistBlocked: context.checklist.filter((item) => item.status === "blocked").length,
+        checklistCompleted: context.checklist.filter((item) => item.status === "completed").length,
+        knowledgeFacts: context.knowledge.items.length
       },
       tasks: context.activeTasks,
+      checklist: context.checklist,
+      knowledge: context.knowledge,
       manifest: manifest
         ? {
             version: manifest.version,

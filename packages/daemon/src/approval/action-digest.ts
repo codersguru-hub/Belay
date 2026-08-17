@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { canonicalJson } from "../indexer/canonical-json.js";
+import type { KnowledgeApprovalPreview } from "@agentmesh/contracts";
 
 export interface CanonicalApprovalAction {
   executor: "local-process";
@@ -13,5 +14,24 @@ export interface CanonicalApprovalAction {
 }
 
 export function actionDigest(action: CanonicalApprovalAction): string {
+  return createHash("sha256").update(canonicalJson(action)).digest("hex");
+}
+
+export interface KnowledgeApprovalPayload extends KnowledgeApprovalPreview {
+  workspaceId: string;
+  projectId: string | null;
+  proposedBy: string;
+}
+
+export interface CanonicalKnowledgeApprovalAction {
+  executor: "knowledge-store";
+  target: string;
+  actionKind: "knowledge";
+  payload: KnowledgeApprovalPayload;
+  policyVersion: string;
+  expiresAt: string;
+}
+
+export function knowledgeActionDigest(action: CanonicalKnowledgeApprovalAction): string {
   return createHash("sha256").update(canonicalJson(action)).digest("hex");
 }

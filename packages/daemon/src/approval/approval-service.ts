@@ -3,7 +3,9 @@ import type Database from "better-sqlite3";
 import type {
   ApprovalDecisionInput,
   ApprovalStatus,
+  KnowledgeApprovalPreview,
   PendingApprovalResult,
+  ProposeKnowledgeInput,
   ProjectCommandResult,
   RunProjectCommandInput
 } from "@agentmesh/contracts";
@@ -19,9 +21,18 @@ import {
   findProjectByRoot,
   type ProjectRow
 } from "../db/repositories/project-repository.js";
+import {
+  findKnowledge,
+  type KnowledgeRow
+} from "../db/repositories/knowledge-repository.js";
 import type { CommandExecutor } from "../executor/command-executor.js";
 import type { CommandRegistry, ValidatedCommandPlan } from "../executor/command-registry.js";
-import { actionDigest, type CanonicalApprovalAction } from "./action-digest.js";
+import {
+  actionDigest,
+  knowledgeActionDigest,
+  type CanonicalApprovalAction,
+  type KnowledgeApprovalPayload
+} from "./action-digest.js";
 import type { ApprovalEventHub } from "./event-hub.js";
 import type { PolicyEngine } from "./policy-engine.js";
 
@@ -45,8 +56,18 @@ function parseJsonArray(value: string): string[] {
 }
 
 function digestFromRow(row: ApprovalRow): string {
+  if (row.action_kind === "knowledge") {
+    return knowledgeActionDigest({
+      executor: "knowledge-store",
+      target: row.target_alias,
+      actionKind: "knowledge",
+      payload: parseKnowledgePayload(row.action_payload_json),
+      policyVersion: row.policy_version,
+      expiresAt: row.expires_at
+    });
+  }
   return actionDigest({
-    executor: row.executor,
+    executor: "local-process",
     target: row.target_alias,
     commandId: row.command_id,
     args: parseJsonArray(row.arguments_json),
@@ -55,6 +76,28 @@ function digestFromRow(row: ApprovalRow): string {
     policyVersion: row.policy_version,
     expiresAt: row.expires_at
   });
+}
+
+function executorMatchesActionKind(row: ApprovalRow): boolean {
+  return row.action_kind === "knowledge"
+    ? row.executor === "knowledge-store"
+    : row.executor === "local-process";
+}
+
+function parseKnowledgePayload(value: string): KnowledgeApprovalPayload {
+  return JSON.parse(value) as KnowledgeApprovalPayload;
+}
+
+function knowledgePreview(payload: KnowledgeApprovalPayload): KnowledgeApprovalPreview {
+  return {
+    knowledgeId: payload.knowledgeId,
+    scope: payload.scope,
+    kind: payload.kind,
+    title: payload.title,
+    body: payload.body,
+    priority: payload.priority,
+    supersedesId: payload.supersedesId
+  };
 }
 
 export class ApprovalService {
@@ -142,6 +185,8 @@ export class ApprovalService {
       project_id: project.id,
       requester: input.requester ?? "unknown-agent",
       executor: "local-process",
+      action_kind: "command",
+      action_payload_json: "{}",
       target_alias: action.target,
       command_id: template.id,
       arguments_json: JSON.stringify(plan.arguments),
@@ -150,6 +195,130 @@ export class ApprovalService {
       environment_names_json: JSON.stringify([...template.environmentVariableNames].sort()),
       policy_version: decision.version,
       policy_reason: decision.reason,
+      action_digest: digest,
+      status: "pending",
+      created_at: createdAt.toISOString(),
+      expires_at: expiresAt,
+      decided_at: null,
+      decision_reason: null,
+      completed_at: null,
+      command_run_id: null,
+      outcome_json: null,
+      correlation_id: correlationId
+    };
+    insertApproval(this.database, row);
+    this.publish(row, "pending", row.created_at);
+    return this.pendingProjection(row);
+  }
+
+  proposeKnowledge(input: ProposeKnowledgeInput): PendingApprovalResult {
+    const correlationId = this.createId();
+    const project = this.resolveProject(input.projectRoot, correlationId);
+    if (!project.workspace_id) {
+      throw new CoordinationError({
+        code: "INTERNAL_ERROR",
+        message: "The project is not attached to an AgentMesh workspace.",
+        correlationId
+      });
+    }
+    if (findKnowledge(this.database, input.knowledgeId)) {
+      throw new CoordinationError({
+        code: "KNOWLEDGE_CONFLICT",
+        message: "The knowledge identifier already exists.",
+        correlationId
+      });
+    }
+
+    const scopedProjectId = input.scope === "project" ? project.id : null;
+    const existingProposal = this.database.prepare(
+      `SELECT * FROM approval_requests
+       WHERE action_kind = 'knowledge' AND status = 'pending'
+         AND json_extract(action_payload_json, '$.knowledgeId') = ?
+       ORDER BY created_at DESC LIMIT 1`
+    ).get(input.knowledgeId) as ApprovalRow | undefined;
+
+    const payload: KnowledgeApprovalPayload = {
+      knowledgeId: input.knowledgeId,
+      workspaceId: project.workspace_id,
+      projectId: scopedProjectId,
+      scope: input.scope,
+      kind: input.kind,
+      title: input.title,
+      body: input.body,
+      priority: input.priority,
+      proposedBy: input.requester,
+      supersedesId: input.supersedesId ?? null
+    };
+    if (existingProposal) {
+      if (existingProposal.action_payload_json === JSON.stringify(payload)) {
+        return this.pendingProjection(existingProposal);
+      }
+      throw new CoordinationError({
+        code: "KNOWLEDGE_CONFLICT",
+        message: "The knowledge identifier is already attached to another pending proposal.",
+        correlationId
+      });
+    }
+
+    if (payload.supersedesId) {
+      const superseded = findKnowledge(this.database, payload.supersedesId);
+      if (
+        !superseded ||
+        superseded.workspace_id !== payload.workspaceId ||
+        superseded.project_id !== payload.projectId ||
+        superseded.superseded_by !== null
+      ) {
+        throw new CoordinationError({
+          code: "KNOWLEDGE_NOT_FOUND",
+          message: "The fact to supersede is not active in the requested scope.",
+          correlationId
+        });
+      }
+    } else {
+      const activeConflict = this.database.prepare(
+        `SELECT id FROM project_knowledge
+         WHERE workspace_id = ? AND project_id IS ? AND kind = ? AND title = ?
+           AND superseded_by IS NULL LIMIT 1`
+      ).get(payload.workspaceId, payload.projectId, payload.kind, payload.title) as
+        | { id: string }
+        | undefined;
+      if (activeConflict) {
+        throw new CoordinationError({
+          code: "KNOWLEDGE_CONFLICT",
+          message: "An active fact already uses this kind and title; supersede it explicitly.",
+          correlationId,
+          details: { existingKnowledgeId: activeConflict.id }
+        });
+      }
+    }
+
+    const createdAt = this.now();
+    const expiresAt = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    const target = input.scope === "workspace" ? "workspace-knowledge" : "project-knowledge";
+    const policyVersion = "knowledge-approval-v1";
+    const digest = knowledgeActionDigest({
+      executor: "knowledge-store",
+      target,
+      actionKind: "knowledge",
+      payload,
+      policyVersion,
+      expiresAt
+    });
+    const row: ApprovalRow = {
+      id: this.createId(),
+      project_id: project.id,
+      requester: input.requester,
+      executor: "knowledge-store",
+      action_kind: "knowledge",
+      action_payload_json: JSON.stringify(payload),
+      target_alias: target,
+      command_id: "propose_knowledge",
+      arguments_json: "[]",
+      working_directory: ".",
+      environment_profile: null,
+      environment_names_json: "[]",
+      policy_version: policyVersion,
+      policy_reason: "Shared semantic knowledge requires explicit human approval.",
       action_digest: digest,
       status: "pending",
       created_at: createdAt.toISOString(),
@@ -185,9 +354,16 @@ export class ApprovalService {
           correlationId: this.createId()
         });
       }
+      let persistedDigest: string | null = null;
+      try {
+        persistedDigest = digestFromRow(row);
+      } catch {
+        // Malformed persisted payloads fail as digest conflicts, not parser leaks.
+      }
       if (
         row.action_digest !== input.expectedDigest ||
-        digestFromRow(row) !== row.action_digest
+        !executorMatchesActionKind(row) ||
+        persistedDigest !== row.action_digest
       ) {
         throw new CoordinationError({
           code: "APPROVAL_CONFLICT",
@@ -242,6 +418,9 @@ export class ApprovalService {
     const executing = { ...decided, status: "executing" as const };
     this.publish(executing, "executing", executionStart);
     try {
+      if (executing.action_kind === "knowledge") {
+        return this.applyKnowledge(executing);
+      }
       const project = this.database.prepare("SELECT canonical_root FROM projects WHERE id = ?")
         .get(decided.project_id) as { canonical_root: string };
       const result = await this.executor.runApproved({
@@ -307,6 +486,9 @@ export class ApprovalService {
   }
 
   private pendingProjection(row: ApprovalRow): PendingApprovalResult {
+    const knowledge = row.action_kind === "knowledge"
+      ? knowledgePreview(parseKnowledgePayload(row.action_payload_json))
+      : null;
     return {
       ok: true,
       status: "pending",
@@ -321,8 +503,95 @@ export class ApprovalService {
       environmentVariableNames: parseJsonArray(row.environment_names_json),
       createdAt: row.created_at,
       expiresAt: row.expires_at,
-      correlationId: row.correlation_id
+      correlationId: row.correlation_id,
+      actionKind: row.action_kind,
+      knowledge
     };
+  }
+
+  private applyKnowledge(row: ApprovalRow): ApprovalDecisionResult {
+    const payload = parseKnowledgePayload(row.action_payload_json);
+    const completedAt = this.now().toISOString();
+    const apply = this.database.transaction(() => {
+      if (findKnowledge(this.database, payload.knowledgeId)) {
+        throw new CoordinationError({
+          code: "KNOWLEDGE_CONFLICT",
+          message: "The approved knowledge identifier already exists.",
+          correlationId: row.correlation_id
+        });
+      }
+      if (payload.supersedesId) {
+        const previous = findKnowledge(this.database, payload.supersedesId);
+        if (
+          !previous ||
+          previous.workspace_id !== payload.workspaceId ||
+          previous.project_id !== payload.projectId ||
+          previous.superseded_by !== null
+        ) {
+          throw new CoordinationError({
+            code: "KNOWLEDGE_CONFLICT",
+            message: "The fact being superseded is no longer active in this scope.",
+            correlationId: row.correlation_id
+          });
+        }
+      }
+
+      const knowledge: KnowledgeRow = {
+        id: payload.knowledgeId,
+        workspace_id: payload.workspaceId,
+        project_id: payload.projectId,
+        kind: payload.kind,
+        title: payload.title,
+        body: payload.body,
+        priority: payload.priority,
+        proposed_by: payload.proposedBy,
+        approval_id: row.id,
+        supersedes_id: payload.supersedesId,
+        superseded_by: null,
+        created_at: completedAt,
+        updated_at: completedAt
+      };
+      this.database.prepare(
+        `INSERT INTO project_knowledge (
+          id, workspace_id, project_id, kind, title, body, priority,
+          proposed_by, approval_id, supersedes_id, superseded_by, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        knowledge.id, knowledge.workspace_id, knowledge.project_id, knowledge.kind,
+        knowledge.title, knowledge.body, knowledge.priority, knowledge.proposed_by,
+        knowledge.approval_id, knowledge.supersedes_id, null,
+        knowledge.created_at, knowledge.updated_at
+      );
+      if (payload.supersedesId) {
+        const superseded = this.database.prepare(
+          `UPDATE project_knowledge SET superseded_by = ?, updated_at = ?
+           WHERE id = ? AND superseded_by IS NULL`
+        ).run(payload.knowledgeId, completedAt, payload.supersedesId);
+        if (superseded.changes !== 1) {
+          throw new CoordinationError({
+            code: "KNOWLEDGE_CONFLICT",
+            message: "The fact could not be superseded exactly once.",
+            correlationId: row.correlation_id
+          });
+        }
+      }
+      const outcome = JSON.stringify({ knowledgeId: payload.knowledgeId, scope: payload.scope });
+      const completed = this.database.prepare(
+        `UPDATE approval_requests SET status = 'succeeded', completed_at = ?, outcome_json = ?
+         WHERE id = ? AND status = 'executing'`
+      ).run(completedAt, outcome, row.id);
+      if (completed.changes !== 1) {
+        throw new CoordinationError({
+          code: "APPROVAL_CONFLICT",
+          message: "The knowledge approval could not complete exactly once.",
+          correlationId: row.correlation_id
+        });
+      }
+    });
+    apply.immediate();
+    const completed = findApproval(this.database, row.id)!;
+    this.publish(completed, "succeeded", completedAt);
+    return this.decisionProjection(completed);
   }
 
   private decisionProjection(row: ApprovalRow): ApprovalDecisionResult {

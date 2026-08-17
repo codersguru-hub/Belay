@@ -12,7 +12,7 @@ export function registerGetStageContext(
     {
       title: "Get Stage Context",
       description:
-        "Read the active project stage, current tasks/file locks, and bounded recent agent memory.",
+        "Read the active stage, bounded shared checklist, current tasks/file locks, and recent activity memory.",
       inputSchema: GetStageContextInputSchema
     },
     async (input) => {
@@ -24,4 +24,3 @@ export function registerGetStageContext(
     }
   );
 }
-

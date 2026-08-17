@@ -53,7 +53,9 @@ export function useDashboard() {
       if (!response.ok) throw new Error(body.message ?? "Decision was not accepted");
       setAnnouncement(
         decision === "approve"
-          ? `Approval accepted. Action finished with status ${body.status ?? "unknown"}.`
+          ? approval.actionKind === "knowledge"
+            ? `Approval accepted. Shared fact finished with status ${body.status ?? "unknown"}.`
+            : `Approval accepted. Action finished with status ${body.status ?? "unknown"}.`
           : "Action rejected. The executor was not invoked."
       );
       await refresh();

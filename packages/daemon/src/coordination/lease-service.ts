@@ -78,6 +78,19 @@ export class LeaseService {
            WHERE id = ? AND status = 'in_progress'`
         )
         .run(now, taskId);
+      this.database
+        .prepare(
+          `UPDATE checklist_items SET
+             status = 'blocked', linked_task_id = NULL,
+             progress_summary = ?, blocked_reason = ?, updated_at = ?
+           WHERE linked_task_id = ? AND status = 'in_progress'`
+        )
+        .run(
+          `Lease expired for task: ${firstLock.title}`,
+          "The owning task lease expired.",
+          now,
+          taskId
+        );
     }
 
     this.database
@@ -86,4 +99,3 @@ export class LeaseService {
     return expiredLocks.length;
   }
 }
-
