@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Local-first control plane for heterogeneous coding agents.",
+  "bin": {
+    "agentmesh": "./bin/agentmesh.js"
+  },
   "workspaces": [
     "packages/contracts",
     "packages/cloud-service",
@@ -13,14 +16,17 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "dev": "npm run dev --workspace @agentmesh/daemon",
-    "start": "npm run start --workspace @agentmesh/daemon",
+    "start": "node bin/agentmesh.js start",
+    "init": "node bin/agentmesh.js init",
+    "doctor": "node bin/agentmesh.js doctor",
     "test": "npm run build && vitest run",
     "benchmark:indexer": "npm run build && node scripts/benchmark-indexer.mjs",
     "smoke:phase1": "node --experimental-strip-types scripts/smoke-phase1.ts",
     "demo:request-approval": "node scripts/request-demo-approval.mjs",
     "demo:verify": "npm run build && vitest run tests/hero-demo.integration.test.ts --reporter=verbose",
     "smoke:cloud": "node scripts/smoke-cloud.mjs",
-    "verify:no-leaks": "npm run build && vitest run tests/executor.security.test.ts tests/cloud-egress.integration.test.ts tests/hero-demo.integration.test.ts --reporter=verbose"
+    "verify:no-leaks": "npm run build && vitest run tests/executor.security.test.ts tests/cloud-egress.integration.test.ts tests/hero-demo.integration.test.ts --reporter=verbose",
+    "demo:seed": "node scripts/seed-demo.mjs"
   },
   "engines": {
     "node": ">=22"
