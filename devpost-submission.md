@@ -88,7 +88,10 @@ npm run verify:no-leaks
 
 Expected verified baseline:
 
-- Full regression: **46 tests across 11 files, 0 skipped.**
+- Full regression: **46 tests across 11 files.** On a clean checkout without the `age` CLI this
+  reports **45 passed, 1 skipped** — the real-`age` Ed25519 round-trip gates itself on `age` and
+  `ssh-keygen` being present rather than silently faking the adapter. With `age` installed all 46
+  run. This is the only conditional test in the suite.
 - Hero flow: deterministic manifest, two MCP contenders with exactly one lock winner, durable restart recovery, secret-backed child execution with redacted output, exactly-once approval with replay rejection, one allowed cloud request, and zero forbidden cloud calls.
 - No-leak suite: **19 focused tests** across executor security, cloud egress, and the integrated hero flow.
 - Manifest reference result: 795 canonical bytes, approximately 199 estimated tokens; timing is measured on each machine rather than hard-coded.

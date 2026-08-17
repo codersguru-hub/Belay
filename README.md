@@ -42,7 +42,11 @@ npm run verify:no-leaks
 
 Expected results on the current proof-of-concept baseline:
 
-- 46 tests across 11 test files pass, with 0 skipped (`verify:no-leaks` covers 19 of them).
+- 46 tests across 11 test files (`verify:no-leaks` covers 19 of them). On a clean checkout you
+  should see **45 passed, 1 skipped**: the real-`age` Ed25519 round-trip skips itself unless both
+  the `age` CLI and `ssh-keygen` are on `PATH`. Install `age` to run all 46. The vault's
+  encryption logic is covered either way by the non-skipped tests; only the live-CLI round-trip
+  is gated.
 - `demo:verify` reports one lock winner and one correlation-bearing conflict.
 - The durable lease is present after a daemon restart.
 - The secret-backed child receives a runtime-random canary while MCP output contains `[REDACTED]`.

@@ -7,7 +7,8 @@
 
 > ⚠️ **Superseded in part (2026-08-17).** This document describes the pre-`explain_lock_conflict`
 > snapshot and its test counts (36 tests / 10 files) are stale. The current verified baseline is
-> **46 tests across 11 files, 0 skipped**, with a 19-test no-leak suite. Treat
+> **46 tests across 11 files** (45 passed / 1 skipped without the `age` CLI present), with a
+> 19-test no-leak suite. Treat
 > `devpost-submission.md` and live command output as authoritative. Sections below were written
 > as a self-review and should not be read as independent third-party validation.
 
