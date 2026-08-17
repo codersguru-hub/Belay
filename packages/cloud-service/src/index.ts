@@ -33,9 +33,23 @@ const summarizeFlow = ai.defineFlow(
   },
   async (input) => {
     const safeInput = CloudSummaryRequestV1Schema.parse(input);
+    const task =
+      safeInput.kind === "lock_conflict_advice"
+        ? [
+            "This request describes a file-lock collision between independent coding agents.",
+            "`heldPaths` are files already leased by another agent (with the exported symbol kinds each file declares);",
+            "`availablePaths` are the requester's remaining uncontended files.",
+            "Explain what work most likely overlaps based on the paths and symbol kinds, then recommend a concrete",
+            "non-conflicting next step for the requester — normally proceeding on `availablePaths` first, or waiting when",
+            "the contended files are structurally inseparable from the rest. Address the requester directly and be specific",
+            "about which paths you mean. You are advisory only: never instruct the requester to bypass, steal, or force a lock."
+          ].join(" ")
+        : "Produce a concise operational summary of the supplied structural metadata or sanitized audit aliases.";
+
     const response = await ai.generate({
       system:
-        "You are AgentMesh cloud intelligence. Analyze only the supplied structural metadata or sanitized audit aliases. Never request source code, secrets, credentials, tools, callbacks, or execution. Return a concise operational summary and an advisory risk label.",
+        "You are AgentMesh cloud intelligence. Analyze only the supplied structural metadata, sanitized aliases, and repository-relative paths. Never request source code, secrets, credentials, tools, callbacks, or execution. Return a concise operational summary and an advisory risk label. " +
+        task,
       prompt: JSON.stringify(safeInput),
       output: { schema: SummaryOutputSchema }
     });

@@ -5,6 +5,9 @@ import { manifestSnapshotsMigration } from "./migrations/003_manifest_snapshots.
 import { commandRunsMigration } from "./migrations/004_command_runs.js";
 import { approvalsMigration } from "./migrations/005_approvals.js";
 import { cloudRequestsMigration } from "./migrations/006_cloud_requests.js";
+import { sharedWorkflowMigration } from "./migrations/007_shared_workflow.js";
+import { projectKnowledgeMigration } from "./migrations/008_project_knowledge.js";
+import { cloudConflictKindMigration } from "./migrations/009_cloud_conflict_kind.js";
 
 const migrations = [
   coordinationMigration,
@@ -12,7 +15,10 @@ const migrations = [
   manifestSnapshotsMigration,
   commandRunsMigration,
   approvalsMigration,
-  cloudRequestsMigration
+  cloudRequestsMigration,
+  sharedWorkflowMigration,
+  projectKnowledgeMigration,
+  cloudConflictKindMigration
 ] as const;
 
 interface AppliedMigrationRow {

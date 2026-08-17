@@ -37,6 +37,7 @@ export interface AllowedEgress {
     ports: number;
     topology: number;
     audit: number;
+    conflictHeldPaths: number;
   };
 }
 
@@ -113,7 +114,8 @@ export class EgressGuard {
         scripts: parsed.data.manifest?.scripts.length ?? 0,
         ports: parsed.data.manifest?.ports.length ?? 0,
         topology: parsed.data.manifest?.topology.length ?? 0,
-        audit: parsed.data.audit?.length ?? 0
+        audit: parsed.data.audit?.length ?? 0,
+        conflictHeldPaths: parsed.data.conflict?.heldPaths.length ?? 0
       }
     };
   }

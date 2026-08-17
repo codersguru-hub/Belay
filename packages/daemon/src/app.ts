@@ -49,7 +49,7 @@ export interface AgentMeshApp {
 }
 
 export interface CreateAgentMeshAppOptions
-  extends Partial<Pick<AgentMeshConfig, "port" | "stateDirectory" | "projectRoot" | "cloudServiceUrl">>,
+  extends Partial<Pick<AgentMeshConfig, "port" | "stateDirectory" | "projectRoot" | "cloudServiceUrl" | "workspaceName">>,
     CoordinationServiceOptions {
   leaseSweepIntervalMilliseconds?: number;
   keyWrapAdapter?: KeyWrapAdapter;
@@ -62,7 +62,7 @@ export function createAgentMeshApp(
 ): AgentMeshApp {
   const config = loadConfig(options);
   const { database } = openStateDatabase(config.databasePath);
-  bootstrapProject(database, config.projectRoot);
+  bootstrapProject(database, config.projectRoot, (options.now?.() ?? new Date()).toISOString(), config.workspaceName);
   recoverAmbiguousApprovals(database, (options.now?.() ?? new Date()).toISOString());
   const coordination = new CoordinationService(database, {
     ...(options.now ? { now: options.now } : {}),
@@ -78,12 +78,15 @@ export function createAgentMeshApp(
   const manifests = new ManifestService(database, {
     ...(options.now ? { now: options.now } : {})
   });
-  const vault = new VaultService(options.keyWrapAdapter ?? new AgeCliAdapter(), {
-    ...(options.now ? { now: options.now } : {}),
-    ...(options.vaultInactivityTimeoutMilliseconds
-      ? { inactivityTimeoutMilliseconds: options.vaultInactivityTimeoutMilliseconds }
-      : {})
-  });
+  const vault = new VaultService(
+    options.keyWrapAdapter ?? new AgeCliAdapter(config.ageBinaryPath ?? undefined),
+    {
+      ...(options.now ? { now: options.now } : {}),
+      ...(options.vaultInactivityTimeoutMilliseconds
+        ? { inactivityTimeoutMilliseconds: options.vaultInactivityTimeoutMilliseconds }
+        : {})
+    }
+  );
   const commandRegistry = new CommandRegistry(
     options.commandTemplates ?? defaultCommandTemplates()
   );
@@ -128,7 +131,13 @@ export function createAgentMeshApp(
     host: config.host,
     port: config.port,
     mcpServerFactory: () =>
-      createAgentMeshMcpServer(coordination, manifests, approvals, config.projectRoot),
+      createAgentMeshMcpServer(
+        coordination,
+        manifests,
+        approvals,
+        config.projectRoot,
+        cloudIntelligence
+      ),
     approvals,
     cloudIntelligence,
     approvalEvents,

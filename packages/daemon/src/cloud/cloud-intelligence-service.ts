@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import type {
+  CloudLockConflict,
   CloudSummaryRequestV1,
   CloudSummaryResponse,
   ProjectManifestV1
@@ -69,26 +70,33 @@ export class CloudIntelligenceService {
     } = {}
   ) {}
 
-  status(): { state: "online" | "degraded"; message: string; model?: string; generatedAt?: string } {
+  status(): {
+    state: "online" | "degraded" | "local_only";
+    message: string;
+    model?: string;
+    generatedAt?: string;
+  } {
     if (this.lastResult) {
       return {
         state: "online",
-        message: `Gemini summary ready · ${this.lastResult.model}`,
+        message: `Gemini advisory ready · ${this.lastResult.model}`,
         model: this.lastResult.model,
         generatedAt: this.lastResult.generatedAt
       };
     }
+    // An unconfigured optional cloud plane is a deliberate local-only posture, not a fault.
+    // Only a configured-but-failing adapter is genuinely degraded.
     if (!this.adapter) {
       return {
-        state: "degraded",
-        message: "Cloud intelligence not configured · Local controls active"
+        state: "local_only",
+        message: "Local-only mode · All coordination and approvals active"
       };
     }
     return {
-      state: "degraded",
+      state: this.lastFailureAt ? "degraded" : "online",
       message: this.lastFailureAt
-        ? "Cloud intelligence unavailable · Local controls active"
-        : "Cloud intelligence ready · No summary requested"
+        ? "Gemini advisory unavailable · Local controls unaffected"
+        : "Gemini advisory connected · Awaiting first request"
     };
   }
 
@@ -104,15 +112,41 @@ export class CloudIntelligenceService {
       safeAlias(snapshot.manifest.project.name, "agentmesh-project"),
       snapshot.manifest
     );
+    return this.dispatch(payload, snapshot.projectId);
+  }
+
+  /**
+   * Ask Gemini to explain a file-lock collision in terms of the overlapping work,
+   * and suggest a non-conflicting split. Purely advisory: the caller still cannot
+   * take the lock, and a rejected or unavailable cloud plane is not an error here —
+   * the MCP tool falls back to the deterministic local split.
+   */
+  async explainLockConflict(conflict: CloudLockConflict): Promise<CloudSummaryResponse> {
+    if (!this.adapter) throw new CloudIntelligenceUnavailableError("NOT_CONFIGURED");
+    const snapshot = this.manifests.getLatest(this.projectRoot);
+    const payload: CloudSummaryRequestV1 = {
+      version: 1,
+      kind: "lock_conflict_advice",
+      projectAlias: safeAlias(
+        snapshot?.manifest.project.name ?? "agentmesh-project",
+        "agentmesh-project"
+      ),
+      conflict
+    };
+    return this.dispatch(payload, snapshot?.projectId);
+  }
+
+  private async dispatch(
+    payload: CloudSummaryRequestV1,
+    projectId: string | undefined
+  ): Promise<CloudSummaryResponse> {
+    if (!this.adapter) throw new CloudIntelligenceUnavailableError("NOT_CONFIGURED");
     const allowed = await this.inspect(payload);
     const requestId = this.options.createRequestId?.() ?? randomUUID();
     const createdAt = (this.options.now?.() ?? new Date()).toISOString();
-    insertCloudRequest(this.database, {
-      id: requestId,
-      projectId: snapshot.projectId,
-      allowed,
-      createdAt
-    });
+    if (projectId) {
+      insertCloudRequest(this.database, { id: requestId, projectId, allowed, createdAt });
+    }
     try {
       const result = await this.adapter.summarize(allowed.payload, {
         requestId,
@@ -121,25 +155,29 @@ export class CloudIntelligenceService {
       if (result.requestId !== requestId) {
         throw new Error("Cloud response correlation mismatch.");
       }
-      completeCloudRequest(this.database, {
-        id: requestId,
-        status: "succeeded",
-        completedAt: (this.options.now?.() ?? new Date()).toISOString(),
-        provider: this.adapter.provider,
-        model: result.model
-      });
+      if (projectId) {
+        completeCloudRequest(this.database, {
+          id: requestId,
+          status: "succeeded",
+          completedAt: (this.options.now?.() ?? new Date()).toISOString(),
+          provider: this.adapter.provider,
+          model: result.model
+        });
+      }
       this.lastResult = { model: result.model, generatedAt: result.generatedAt };
       this.lastFailureAt = undefined;
       return result;
     } catch {
       const completedAt = (this.options.now?.() ?? new Date()).toISOString();
-      completeCloudRequest(this.database, {
-        id: requestId,
-        status: "failed",
-        completedAt,
-        provider: this.adapter.provider,
-        errorCode: "CLOUD_UNAVAILABLE"
-      });
+      if (projectId) {
+        completeCloudRequest(this.database, {
+          id: requestId,
+          status: "failed",
+          completedAt,
+          provider: this.adapter.provider,
+          errorCode: "CLOUD_UNAVAILABLE"
+        });
+      }
       this.lastFailureAt = completedAt;
       throw new CloudIntelligenceUnavailableError("CLOUD_UNAVAILABLE");
     }

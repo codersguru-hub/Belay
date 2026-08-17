@@ -54,31 +54,61 @@ export const CloudAuditEventSchema = z
   })
   .strict();
 
+/**
+ * Structural description of a file-lock collision. Carries only agent aliases,
+ * repository-relative paths, and exported symbol kinds — never file bodies — so it
+ * travels the same metadata-only egress boundary as the manifest projection.
+ */
+export const CloudLockConflictSchema = z
+  .object({
+    requesterAlias: AliasSchema,
+    heldPaths: z
+      .array(
+        z
+          .object({
+            path: z.string().trim().min(1).max(512),
+            holderAlias: AliasSchema,
+            symbolKinds: z.array(ShortTextSchema).max(80).default([])
+          })
+          .strict()
+      )
+      .min(1)
+      .max(200),
+    availablePaths: z.array(z.string().trim().min(1).max(512)).max(200)
+  })
+  .strict();
+
 export const CloudSummaryRequestV1Schema = z
   .object({
     version: z.literal(1),
-    kind: z.enum(["manifest_summary", "audit_risk_explanation"]),
+    kind: z.enum(["manifest_summary", "audit_risk_explanation", "lock_conflict_advice"]),
     projectAlias: AliasSchema,
     manifest: CloudManifestSchema.optional(),
-    audit: z.array(CloudAuditEventSchema).max(200).optional()
+    audit: z.array(CloudAuditEventSchema).max(200).optional(),
+    conflict: CloudLockConflictSchema.optional()
   })
   .strict()
   .superRefine((value, context) => {
-    if (value.kind === "manifest_summary" && (!value.manifest || value.audit)) {
-      context.addIssue({
-        code: "custom",
-        message: "manifest_summary requires manifest and forbids audit"
-      });
-    }
-    if (value.kind === "audit_risk_explanation" && (!value.audit || value.manifest)) {
-      context.addIssue({
-        code: "custom",
-        message: "audit_risk_explanation requires audit and forbids manifest"
-      });
+    const expected = {
+      manifest_summary: "manifest",
+      audit_risk_explanation: "audit",
+      lock_conflict_advice: "conflict"
+    } as const;
+    const required = expected[value.kind];
+    // Exactly one payload field may be present, and it must match the declared kind.
+    for (const field of ["manifest", "audit", "conflict"] as const) {
+      const present = value[field] !== undefined;
+      if (field === required && !present) {
+        context.addIssue({ code: "custom", message: `${value.kind} requires ${field}` });
+      }
+      if (field !== required && present) {
+        context.addIssue({ code: "custom", message: `${value.kind} forbids ${field}` });
+      }
     }
   });
 
 export type CloudSummaryRequestV1 = z.infer<typeof CloudSummaryRequestV1Schema>;
+export type CloudLockConflict = z.infer<typeof CloudLockConflictSchema>;
 
 export const CloudSummaryResponseSchema = z
   .object({
