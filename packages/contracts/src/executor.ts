@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { RepositoryRootSchema } from "./mcp.js";
+import type { KnowledgeApprovalPreview } from "./knowledge.js";
 
 const visibleIdentifier = z
   .string()
@@ -76,6 +77,8 @@ export interface PendingApprovalResult {
   createdAt: string;
   expiresAt: string;
   correlationId: string;
+  actionKind: "command" | "knowledge";
+  knowledge: KnowledgeApprovalPreview | null;
 }
 
 export type ProjectCommandResult = CommandExecutionResult | PendingApprovalResult;

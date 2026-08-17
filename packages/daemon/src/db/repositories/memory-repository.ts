@@ -8,5 +8,6 @@ export interface MemoryRow {
   impacted_files_json: string;
   correlation_id: string;
   created_at: string;
+  idempotency_key: string | null;
+  metadata_json: string;
 }
-

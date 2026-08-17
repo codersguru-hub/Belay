@@ -5,7 +5,9 @@ export interface ApprovalRow {
   id: string;
   project_id: string;
   requester: string;
-  executor: "local-process";
+  executor: "local-process" | "knowledge-store";
+  action_kind: "command" | "knowledge";
+  action_payload_json: string;
   target_alias: string;
   command_id: string;
   arguments_json: string;
@@ -30,13 +32,14 @@ export function insertApproval(database: Database.Database, row: ApprovalRow): v
   database.prepare(
     `INSERT INTO approval_requests (
       id, project_id, requester, executor, target_alias, command_id,
-      arguments_json, working_directory, environment_profile,
+      action_kind, action_payload_json, arguments_json, working_directory, environment_profile,
       environment_names_json, policy_version, policy_reason, action_digest,
       status, created_at, expires_at, correlation_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
   ).run(
     row.id, row.project_id, row.requester, row.executor, row.target_alias,
-    row.command_id, row.arguments_json, row.working_directory,
+    row.command_id, row.action_kind, row.action_payload_json,
+    row.arguments_json, row.working_directory,
     row.environment_profile, row.environment_names_json, row.policy_version,
     row.policy_reason, row.action_digest, row.created_at, row.expires_at,
     row.correlation_id

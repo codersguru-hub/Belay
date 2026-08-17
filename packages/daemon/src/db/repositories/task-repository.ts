@@ -9,6 +9,7 @@ export interface TaskRow {
   acquisition_fingerprint: string | null;
   completion_fingerprint: string | null;
   completion_result_json: string | null;
+  checklist_item_id: string | null;
   lease_expires_at: string | null;
   created_at: string;
   updated_at: string;

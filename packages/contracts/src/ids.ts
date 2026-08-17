@@ -10,8 +10,11 @@ const boundedIdentifier = z
 export const ProjectIdSchema = boundedIdentifier.brand<"ProjectId">();
 export const StageIdSchema = boundedIdentifier.brand<"StageId">();
 export const TaskIdSchema = boundedIdentifier.brand<"TaskId">();
+export const ChecklistItemIdSchema = boundedIdentifier.brand<"ChecklistItemId">();
+export const KnowledgeIdSchema = boundedIdentifier.brand<"KnowledgeId">();
 
 export type ProjectId = z.infer<typeof ProjectIdSchema>;
 export type StageId = z.infer<typeof StageIdSchema>;
 export type TaskId = z.infer<typeof TaskIdSchema>;
-
+export type ChecklistItemId = z.infer<typeof ChecklistItemIdSchema>;
+export type KnowledgeId = z.infer<typeof KnowledgeIdSchema>;

@@ -9,6 +9,7 @@ export interface ProjectRow {
   display_name: string;
   created_at: string;
   updated_at: string;
+  workspace_id: string | null;
 }
 
 export function canonicalizeProjectRoot(projectRoot: string): string {
@@ -26,11 +27,15 @@ function stableId(prefix: string, value: string): string {
 export function bootstrapProject(
   database: Database.Database,
   projectRoot: string,
-  now = new Date().toISOString()
+  now = new Date().toISOString(),
+  workspaceName?: string | null
 ): { project: ProjectRow; stageId: string } {
   const canonicalRoot = canonicalizeProjectRoot(projectRoot);
   const projectId = stableId("project", canonicalRoot);
   const stageId = stableId("stage", `${canonicalRoot}:Build MVP`);
+  const workspaceKey = workspaceName?.trim() || canonicalRoot;
+  const workspaceId = stableId("workspace", workspaceKey);
+  const workspaceDisplayName = workspaceName?.trim() || basename(canonicalRoot);
 
   const bootstrap = database.transaction(() => {
     database
@@ -43,6 +48,19 @@ export function bootstrapProject(
           updated_at = excluded.updated_at`
       )
       .run(projectId, canonicalRoot, basename(canonicalRoot), now, now);
+
+    database
+      .prepare(
+        `INSERT INTO workspaces (id, workspace_key, name, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(workspace_key) DO UPDATE SET
+           name = excluded.name,
+           updated_at = excluded.updated_at`
+      )
+      .run(workspaceId, workspaceKey, workspaceDisplayName, now, now);
+    database
+      .prepare("UPDATE projects SET workspace_id = ?, updated_at = ? WHERE canonical_root = ?")
+      .run(workspaceId, now, canonicalRoot);
 
     const project = database
       .prepare("SELECT * FROM projects WHERE canonical_root = ?")
@@ -83,4 +101,3 @@ export function findProjectByRoot(
     .prepare("SELECT * FROM projects WHERE canonical_root = ?")
     .get(canonicalRoot) as ProjectRow | undefined;
 }
-
