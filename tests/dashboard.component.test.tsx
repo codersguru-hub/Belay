@@ -26,15 +26,59 @@ const snapshot: DashboardSnapshot = {
     { name: "codex", activeTasks: 1, state: "active" },
     { name: "claude-code", activeTasks: 0, state: "idle" }
   ],
-  summary: { activeTasks: 1, lockedFiles: 1, pendingApprovals: 1 },
+  summary: {
+    activeTasks: 1,
+    lockedFiles: 1,
+    pendingApprovals: 1,
+    checklistPending: 0,
+    checklistBlocked: 0,
+    checklistCompleted: 0,
+    knowledgeFacts: 1
+  },
   tasks: [{
     id: "task-refactor",
     title: "Refactor API",
     agentName: "codex",
     leaseExpiresAt: "2099-08-15T10:10:00.000Z",
     lockedFiles: ["src/engine/core.ts"],
-    omittedLockedFiles: 0
+    omittedLockedFiles: 0,
+    checklistItemId: "check-refactor"
   }],
+  checklist: [{
+    id: "check-refactor",
+    stageId: "stage-demo",
+    title: "Refactor the shared API",
+    description: "Keep all agents aligned on the contract migration.",
+    status: "in_progress",
+    ownerAgent: "codex",
+    linkedTaskId: "task-refactor",
+    dependencyIds: [],
+    acceptanceCriteria: ["All clients compile"],
+    priority: 80,
+    progressSummary: "Contracts updated",
+    progressPercent: 60,
+    blockedReason: null,
+    verificationEvidence: [],
+    proposedBy: "claude-code",
+    createdAt: "2026-08-15T09:00:00.000Z",
+    updatedAt: "2026-08-15T10:00:00.000Z",
+    completedAt: null
+  }],
+  knowledge: {
+    workspaceId: "workspace-demo",
+    omittedItems: 0,
+    items: [{
+      id: "knowledge-contracts",
+      scope: "project",
+      kind: "constraint",
+      title: "Keep contracts backward compatible",
+      body: "All MCP clients must compile against the shared contracts package.",
+      bodyTruncated: false,
+      priority: 90,
+      proposedBy: "claude-code",
+      approvalId: "approval-knowledge"
+    }]
+  },
   manifest: {
     version: "8f2ac01e8f2ac01e8f2ac01e8f2ac01e8f2ac01e8f2ac01e8f2ac01e8f2ac01e",
     stale: false,
@@ -66,7 +110,9 @@ const snapshot: DashboardSnapshot = {
     environmentVariableNames: ["DB_PASSWORD", "AWS_SECRET_KEY"],
     createdAt: "2026-08-15T10:00:00.000Z",
     expiresAt: "2099-08-15T10:05:00.000Z",
-    correlationId: "correlation-demo"
+    correlationId: "correlation-demo",
+    actionKind: "command",
+    knowledge: null
   }],
   audit: [{
     id: "approval-1",
@@ -104,13 +150,39 @@ afterEach(() => {
 describe("quiet developer cockpit", () => {
   it("shows high-signal state with clear units, labels, and resource-lock chips", async () => {
     render(<App />);
-    expect(await screen.findByText("274 tok")).toBeTruthy();
-    expect(screen.getByText("1 Active / 1 Idle")).toBeTruthy();
+    expect(await screen.findByText("Refactor the shared API")).toBeTruthy();
     expect(screen.getByText("src/engine/core.ts").className).toContain("path-chip");
+    expect(screen.getByText("60%")).toBeTruthy();
     expect(screen.getByText(/human approval required/i)).toBeTruthy();
     expect(screen.getAllByText("DB_PASSWORD").length).toBeGreaterThan(0);
     expect(document.body.textContent).not.toContain("actual-secret-value");
-    expect(screen.getAllByText("DEGRADED · LOCAL ACTIVE").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("CLOUD DEGRADED · LOCAL ACTIVE").length).toBeGreaterThan(0);
+    expect(document.body.textContent).toContain("274");
+    expect(document.body.textContent).toContain("tokens");
+    expect(screen.getAllByText("codex").length).toBeGreaterThan(0);
+    expect(screen.getByText("1 ACTIVE")).toBeTruthy();
+  });
+
+  it("reports an unconfigured optional cloud plane as local-only rather than a fault", async () => {
+    // A deliberately unconfigured advisory plane must never render as DEGRADED, since the
+    // local control plane is fully operational without it.
+    const localOnly: DashboardSnapshot = {
+      ...snapshot,
+      service: {
+        ...snapshot.service,
+        cloudIntelligence: "local_only",
+        cloudMessage: "Local-only mode · All coordination and approvals active"
+      }
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(localOnly), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    })));
+
+    render(<App />);
+    expect(await screen.findByText("LOCAL-ONLY · READY")).toBeTruthy();
+    expect(document.body.textContent).not.toContain("DEGRADED");
+    expect(document.body.textContent).not.toContain("not configured");
   });
 
   it("keeps approval shortcuts scoped to the focused approval card", async () => {

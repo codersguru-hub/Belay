@@ -50,7 +50,8 @@ describe("cloud egress privacy boundary", () => {
       scripts: 2,
       ports: 1,
       topology: 1,
-      audit: 0
+      audit: 0,
+      conflictHeldPaths: 0
     });
   });
 
@@ -77,6 +78,60 @@ describe("cloud egress privacy boundary", () => {
     expect(networkCalls).toBe(0);
   });
 
+  it("allows a metadata-only lock conflict payload and counts its contended paths", () => {
+    const inspected = new EgressGuard().inspect({
+      version: 1,
+      kind: "lock_conflict_advice",
+      projectAlias: "demo-project",
+      conflict: {
+        requesterAlias: "claude-code",
+        heldPaths: [
+          { path: "src/auth-service.ts", holderAlias: "codex", symbolKinds: ["class", "function"] },
+          { path: "src/session.ts", holderAlias: "codex", symbolKinds: ["interface"] }
+        ],
+        availablePaths: ["src/routes/login.ts"]
+      }
+    });
+    expect(inspected.payload.kind).toBe("lock_conflict_advice");
+    expect(inspected.fieldCounts.conflictHeldPaths).toBe(2);
+  });
+
+  it.each([
+    ["a raw file body smuggled into a conflict", {
+      version: 1,
+      kind: "lock_conflict_advice",
+      projectAlias: "demo-project",
+      conflict: {
+        requesterAlias: "claude-code",
+        heldPaths: [{ path: "src/a.ts", holderAlias: "codex", symbolKinds: [], source: "export const x = 1" }],
+        availablePaths: []
+      }
+    }],
+    ["a conflict carrying a manifest at the same time", {
+      version: 1,
+      kind: "lock_conflict_advice",
+      projectAlias: "demo-project",
+      manifest: allowedPayload().manifest,
+      conflict: {
+        requesterAlias: "claude-code",
+        heldPaths: [{ path: "src/a.ts", holderAlias: "codex", symbolKinds: [] }],
+        availablePaths: []
+      }
+    }],
+    ["a conflict declaring the wrong kind", {
+      version: 1,
+      kind: "manifest_summary",
+      projectAlias: "demo-project",
+      conflict: {
+        requesterAlias: "claude-code",
+        heldPaths: [{ path: "src/a.ts", holderAlias: "codex", symbolKinds: [] }],
+        availablePaths: []
+      }
+    }]
+  ])("rejects %s", (_label, candidate) => {
+    expect(() => new EgressGuard().inspect(candidate)).toThrow(EgressRejectedError);
+  });
+
   it("blocks known secret values and approved encodings before network", () => {
     const canary = "AGENTMESH-CLOUD-CANARY-8d7e9f";
     const variants = [
@@ -90,6 +145,56 @@ describe("cloud egress privacy boundary", () => {
       candidate.manifest!.frameworks = [variant];
       expect(() => new EgressGuard([canary]).inspect(candidate)).toThrow(EgressRejectedError);
     }
+  });
+
+  it("sends only aliases, paths, and symbol kinds when adjudicating a lock conflict", async () => {
+    const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-conflict-"));
+    temporaryDirectories.push(stateDirectory);
+    const projectRoot = resolve("tests/fixtures/demo-repo");
+    const { database } = openStateDatabase(join(stateDirectory, "state.db"));
+    bootstrapProject(database, projectRoot);
+    const manifests = new ManifestService(database);
+    manifests.indexProject(projectRoot);
+    const vault = {
+      status: () => ({ state: "unconfigured", variableNames: [] })
+    } as unknown as VaultService;
+
+    let sent: CloudSummaryRequestV1 | undefined;
+    const adapter: CloudSummaryAdapter = {
+      provider: "mock-cloud-run",
+      async summarize(payload, options): Promise<CloudSummaryResponse> {
+        sent = payload;
+        return {
+          requestId: options.requestId,
+          model: "gemini-3.6-flash",
+          summary: "codex holds src/auth-service.ts; proceed on src/routes/login.ts first.",
+          riskLevel: "low",
+          generatedAt: "2026-08-15T12:00:00.000Z"
+        };
+      }
+    };
+    const service = new CloudIntelligenceService(
+      database,
+      manifests,
+      vault,
+      projectRoot,
+      adapter,
+      { createRequestId: () => "123e4567-e89b-42d3-a456-426614174001" }
+    );
+
+    const result = await service.explainLockConflict({
+      requesterAlias: "claude-code",
+      heldPaths: [{ path: "src/auth-service.ts", holderAlias: "codex", symbolKinds: ["class"] }],
+      availablePaths: ["src/routes/login.ts"]
+    });
+
+    expect(result.model).toBe("gemini-3.6-flash");
+    expect(result.summary).toContain("src/routes/login.ts");
+    expect(sent?.kind).toBe("lock_conflict_advice");
+    expect(sent?.manifest).toBeUndefined();
+    // Nothing beyond the declared conflict projection may cross the boundary.
+    expect(Object.keys(sent ?? {}).sort()).toEqual(["conflict", "kind", "projectAlias", "version"]);
+    database.close();
   });
 
   it("records metadata-only success and leaves local state usable on cloud failure", async () => {

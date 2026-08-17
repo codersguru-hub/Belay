@@ -63,10 +63,17 @@ describe("mcp streamable http coordination", () => {
     const tools = await codex.client.listTools();
     expect(tools.tools.map((tool) => tool.name).sort()).toEqual([
       "acquire_task",
+      "add_checklist_item",
+      "block_task",
+      "explain_lock_conflict",
       "get_stage_context",
       "heartbeat_task",
+      "list_checklist",
+      "list_knowledge",
       "log_completion",
+      "propose_knowledge",
       "reindex_project",
+      "report_task_progress",
       "run_project_command"
     ]);
 
@@ -155,7 +162,40 @@ describe("mcp streamable http coordination", () => {
     );
 
     const winner = requests[winnerIndex];
+    const loser = requests[loserIndex];
     expect(winner).toBeDefined();
+    expect(loser).toBeDefined();
+
+    // The agent that lost the race asks why. With no cloud adapter configured the advisory
+    // plane is absent, but the deterministic local split must still be actionable, and the
+    // tool must never hand back a lock it does not own.
+    const advice = await loser!.client.callTool({
+      name: "explain_lock_conflict",
+      arguments: {
+        projectRoot,
+        agentName: loser!.agentName,
+        filePaths: ["src/shared-schema.ts", `src/${loser!.agentName}.ts`]
+      }
+    });
+    expect(advice.isError).not.toBe(true);
+    expect(advice.structuredContent).toEqual(
+      expect.objectContaining({
+        ok: true,
+        advisory: null,
+        advisoryState: "not_configured",
+        retryable: true,
+        heldPaths: [
+          expect.objectContaining({
+            path: "src/shared-schema.ts",
+            holderAgent: winner!.agentName,
+            taskId: winner!.taskId
+          })
+        ],
+        // The loser's own uncontended file remains available to retry with.
+        availablePaths: [`src/${loser!.agentName}.ts`]
+      })
+    );
+
     const completion = await winner!.client.callTool({
       name: "log_completion",
       arguments: {
@@ -183,5 +223,179 @@ describe("mcp streamable http coordination", () => {
       expect.objectContaining({ actionType: "completed", taskId: winner!.taskId }),
       expect.objectContaining({ actionType: "task_acquired", taskId: winner!.taskId })
     ]);
+  });
+
+  it("shares checklist dependencies, progress, blockers, and verification across clients", async () => {
+    const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-workflow-"));
+    cleanupDirectories.push(stateDirectory);
+    const projectRoot = join(stateDirectory, "demo-repo");
+    mkdirSync(projectRoot);
+    const app = createAgentMeshApp({ stateDirectory, projectRoot, port: 0 });
+    cleanupApps.push(app);
+    const endpoint = await app.start();
+    const codex = await connectClient(endpoint.mcpUrl, "codex-workflow-client");
+    const antigravity = await connectClient(endpoint.mcpUrl, "antigravity-workflow-client");
+
+    for (const item of [
+      {
+        itemId: "check-contracts",
+        title: "Define shared contracts",
+        dependencyIds: []
+      },
+      {
+        itemId: "check-dashboard",
+        title: "Render shared workflow",
+        dependencyIds: ["check-contracts"]
+      }
+    ]) {
+      const added = await codex.client.callTool({
+        name: "add_checklist_item",
+        arguments: {
+          projectRoot,
+          proposedBy: "codex",
+          description: "Cross-agent workflow proof.",
+          acceptanceCriteria: ["Verified through MCP"],
+          priority: 80,
+          ...item
+        }
+      });
+      expect(added.isError).not.toBe(true);
+    }
+
+    const dependencyBlocked = await antigravity.client.callTool({
+      name: "acquire_task",
+      arguments: {
+        projectRoot,
+        taskId: "task-dashboard-early",
+        agentName: "antigravity",
+        title: "Render too early",
+        filePaths: ["src/dashboard.ts"],
+        idempotencyKey: "dashboard-early-001",
+        checklistItemId: "check-dashboard"
+      }
+    });
+    expect(dependencyBlocked.isError).toBe(true);
+    expect(dependencyBlocked.structuredContent).toEqual(
+      expect.objectContaining({ ok: false, code: "CHECKLIST_DEPENDENCY_BLOCKED" })
+    );
+
+    const acquired = await codex.client.callTool({
+      name: "acquire_task",
+      arguments: {
+        projectRoot,
+        taskId: "task-contracts",
+        agentName: "codex",
+        title: "Define shared contracts",
+        filePaths: ["src/contracts.ts"],
+        idempotencyKey: "contracts-acquire-001",
+        checklistItemId: "check-contracts"
+      }
+    });
+    expect(acquired.structuredContent).toEqual(
+      expect.objectContaining({ ok: true, checklistItemId: "check-contracts" })
+    );
+
+    const progressArguments = {
+      projectRoot,
+      taskId: "task-contracts",
+      agentName: "codex",
+      summary: "Schemas are implemented; integration wiring remains.",
+      progressPercent: 70,
+      evidence: ["Contracts package builds"],
+      idempotencyKey: "contracts-progress-001"
+    };
+    const progress = await codex.client.callTool({
+      name: "report_task_progress",
+      arguments: progressArguments
+    });
+    const progressReplay = await codex.client.callTool({
+      name: "report_task_progress",
+      arguments: progressArguments
+    });
+    expect(progress.structuredContent).toEqual(
+      expect.objectContaining({ ok: true, progressPercent: 70, idempotentReplay: false })
+    );
+    expect(progressReplay.structuredContent).toEqual(
+      expect.objectContaining({
+        ok: true,
+        memoryId: (progress.structuredContent as { memoryId: number }).memoryId,
+        idempotentReplay: true
+      })
+    );
+
+    await codex.client.callTool({
+      name: "log_completion",
+      arguments: {
+        projectRoot,
+        taskId: "task-contracts",
+        agentName: "codex",
+        summary: "Shared contracts completed.",
+        modifiedFiles: ["src/contracts.ts"],
+        verificationEvidence: ["npm run build passed"]
+      }
+    });
+
+    const dashboardAcquire = await antigravity.client.callTool({
+      name: "acquire_task",
+      arguments: {
+        projectRoot,
+        taskId: "task-dashboard",
+        agentName: "antigravity",
+        title: "Render shared workflow",
+        filePaths: ["src/dashboard.ts"],
+        idempotencyKey: "dashboard-acquire-001",
+        checklistItemId: "check-dashboard"
+      }
+    });
+    expect(dashboardAcquire.isError).not.toBe(true);
+    const blocked = await antigravity.client.callTool({
+      name: "block_task",
+      arguments: {
+        projectRoot,
+        taskId: "task-dashboard",
+        agentName: "antigravity",
+        reason: "Waiting for design approval.",
+        evidence: ["Approval card is pending"],
+        idempotencyKey: "dashboard-block-001"
+      }
+    });
+    expect(blocked.structuredContent).toEqual(
+      expect.objectContaining({ ok: true, status: "blocked", releasedFiles: ["src/dashboard.ts"] })
+    );
+
+    const shared = await codex.client.callTool({
+      name: "list_checklist",
+      arguments: { projectRoot, includeCompleted: true, limit: 20 }
+    });
+    expect(shared.structuredContent).toEqual(
+      expect.objectContaining({
+        ok: true,
+        items: [
+          expect.objectContaining({ id: "check-contracts", status: "completed", progressPercent: 100 }),
+          expect.objectContaining({ id: "check-dashboard", status: "blocked", blockedReason: "Waiting for design approval." })
+        ]
+      })
+    );
+
+    const resumed = await codex.client.callTool({
+      name: "acquire_task",
+      arguments: {
+        projectRoot,
+        taskId: "task-dashboard-resumed",
+        agentName: "codex",
+        title: "Resume shared workflow rendering",
+        filePaths: ["src/dashboard.ts"],
+        idempotencyKey: "dashboard-resume-001",
+        checklistItemId: "check-dashboard"
+      }
+    });
+    expect(resumed.structuredContent).toEqual(
+      expect.objectContaining({
+        ok: true,
+        status: "in_progress",
+        checklistItemId: "check-dashboard",
+        lockedFiles: ["src/dashboard.ts"]
+      })
+    );
   });
 });

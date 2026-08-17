@@ -43,7 +43,7 @@ describe("db coordination kernel", () => {
     const migrationCount = fixture.database
       .prepare("SELECT count(*) AS count FROM schema_migrations")
       .get() as { count: number };
-    expect(migrationCount.count).toBe(6);
+    expect(migrationCount.count).toBe(9);
 
     expect(() =>
       fixture.database
