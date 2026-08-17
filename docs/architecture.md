@@ -17,13 +17,21 @@ The diagram source is [`architecture.mmd`](architecture.mmd). The editable SVG e
 
 Agent input → Zod boundary validation → repository-relative normalization → `BEGIN IMMEDIATE` → conflict check → task/lock/memory commit → bounded MCP context → heartbeat, expiry, or completion release.
 
+### Shared workflow state
+
+Checklist proposal → dependency validation → pending item → atomic task acquisition and item claim → idempotent progress events → completion with verification evidence, or blocker transition with lock release. The bounded checklist is returned separately from recency-based activity memory so pending work cannot disappear behind newer events.
+
+### Shared semantic knowledge
+
+Agent proposal → project/workspace scope resolution → collision and supersession validation → canonical payload digest → pending cockpit card → authenticated human decision → atomic fact publication and prior-fact retirement. Only active approved rows enter the separately budgeted pinned context block; pending, rejected, and superseded rows remain outside agent context.
+
 ### Secret-backed execution
 
 Encrypted vault → local `age` identity unwrap of the random DEK → AES-256-GCM authentication/decryption in process memory → registered child environment → streaming raw/encoded secret redaction → sanitized MCP/audit projection → best-effort buffer cleanup.
 
 ### Approval
 
-Registered command → policy classification → canonical SHA-256 action digest → pending cockpit card → one authenticated decision → approve-before-execute transition → terminal result. Expired, replayed, modified, or restart-ambiguous actions fail closed.
+Registered command or knowledge proposal → canonical SHA-256 action digest → pending cockpit card → one authenticated decision → approve-before-execute/publish transition → terminal result. Expired, replayed, modified, or restart-ambiguous actions fail closed.
 
 ### Cloud summary
 

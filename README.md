@@ -8,8 +8,10 @@ AgentMesh lets Claude Code, OpenAI Codex, Antigravity, and other MCP clients wor
 
 ## What works
 
-- Stateful MCP Streamable HTTP on `127.0.0.1` with `get_stage_context`, `acquire_task`, `heartbeat_task`, `log_completion`, `reindex_project`, and `run_project_command`.
+- Stateful MCP Streamable HTTP on `127.0.0.1` with bounded shared checklists, approved semantic knowledge, dependency-aware acquisition, progress/blocker reporting, completion evidence, indexing, and policy-controlled execution.
 - SQLite WAL coordination with atomic file leases, idempotency, bounded context, expiry, and restart recovery.
+- Durable project checklists with priorities, dependencies, owners, progress, blockers, acceptance criteria, and verification evidence shared across heterogeneous clients.
+- Durable project/workspace facts with provenance, priority, explicit supersession, a separately bounded pinned context block, and human approval before publication.
 - Deterministic `project://manifest` generation with secret-shaped path exclusion, stable hashing, omission counters, and an 800-token ceiling.
 - AES-256-GCM environment vault with an `age`-wrapped random DEK for supported Ed25519/RSA SSH identity files.
 - Registry-only, `shell: false` execution with minimal environment injection, time/output limits, and split-stream secret redaction.
@@ -40,7 +42,7 @@ npm run verify:no-leaks
 
 Expected results on the current proof-of-concept baseline:
 
-- 36 tests across 10 test files pass.
+- 46 tests across 11 test files pass, with 0 skipped (`verify:no-leaks` covers 19 of them).
 - `demo:verify` reports one lock winner and one correlation-bearing conflict.
 - The durable lease is present after a daemon restart.
 - The secret-backed child receives a runtime-random canary while MCP output contains `[REDACTED]`.
@@ -52,25 +54,61 @@ Timing and manifest hashes are measured, not hard-coded. The Item 11 reference r
 
 ## Run the local control plane
 
-PowerShell:
-
-```powershell
-$env:AGENTMESH_PROJECT_ROOT = (Resolve-Path .).Path
-$env:AGENTMESH_STATE_DIR = Join-Path $env:TEMP "agentmesh-state"
-$env:AGENTMESH_PORT = "3420"
-npm run start
-```
-
-Bash:
+Start AgentMesh with a single command:
 
 ```bash
-export AGENTMESH_PROJECT_ROOT="$PWD"
-export AGENTMESH_STATE_DIR="${TMPDIR:-/tmp}/agentmesh-state"
-export AGENTMESH_PORT=3420
-npm run start
+# Starts the control plane and automatically opens the Cockpit in your browser
+npm start
+# or using the CLI directly:
+npx agentmesh start --open
 ```
 
-Open `http://127.0.0.1:3420/` for the cockpit. Connect MCP clients to `http://127.0.0.1:3420/mcp`. AgentMesh is loopback-only and rejects forwarded routing headers.
+Initialize project configuration or run environment health diagnostics:
+
+```bash
+# Initialize .agentmesh/config.json and git protections in your project
+npm run init
+
+# Run system doctor to verify Node version, ports, age CLI, and cloud connectivity
+npm run doctor
+```
+
+Open `http://127.0.0.1:3420/` for the cockpit. Connect MCP clients to `http://127.0.0.1:3420/mcp` (or click **"Connect Agents"** in the Cockpit for 1-click configuration snippets). AgentMesh is loopback-only and rejects forwarded routing headers.
+
+### Seed a realistic cockpit for review
+
+A fresh install has nothing to coordinate yet, so the cockpit starts empty. To see the product
+working without connecting four real agents by hand:
+
+```bash
+npm run start
+# in a second terminal:
+npm run demo:seed
+```
+
+This drives the real MCP surface as four independent clients — so the state, agent roster, and
+audit trail are genuine, not fixture data written behind the daemon. You get four connected
+agents, two live file leases, a real lock conflict (with `explain_lock_conflict` advice), a
+blocked plan item, and pending approvals. The approvals are left pending on purpose: granting
+them is the human authority step, and doing it yourself is the point.
+
+### Custom configuration (Optional)
+
+You can customize parameters via `.agentmesh/config.json`, CLI flags, or environment variables:
+
+```json
+// .agentmesh/config.json
+{
+  "port": 3420,
+  "workspaceName": "agentmesh-suite",
+  "stateDirectory": "~/.agentmesh"
+}
+```
+
+```powershell
+# PowerShell with custom flags:
+npx agentmesh start -p 3420 -w "agentmesh-suite" --open
+```
 
 Create the safe disposable approval card from another terminal:
 
@@ -84,10 +122,17 @@ The built-in action simulates a staging reload with a local Node process. It is 
 
 | Capability | Purpose |
 | --- | --- |
-| `get_stage_context` | Read active stage, tasks, locks, recent memory, and manifest freshness. |
-| `acquire_task` | Atomically acquire a task and normalized repository-relative file set. |
+| `get_stage_context` | Read pinned approved knowledge plus the bounded shared checklist, active stage, tasks, locks, recent activity, and manifest freshness. |
+| `add_checklist_item` | Add an auditable pending work item with dependencies, acceptance criteria, and priority. |
+| `list_checklist` | Read checklist owners, dependencies, progress, blockers, and verification evidence. |
+| `propose_knowledge` | Propose a durable project/workspace fact or explicit supersession; publication requires human approval of its exact digest. |
+| `list_knowledge` | Read approved facts with scope, provenance, priority, and supersession history. |
+| `acquire_task` | Atomically acquire a task and normalized repository-relative file set, optionally claiming a ready checklist item. |
 | `heartbeat_task` | Extend an owner-held task and all of its leases together. |
-| `log_completion` | Persist completion memory and release owned locks atomically. |
+| `report_task_progress` | Append an idempotent progress event and update the linked checklist item. |
+| `block_task` | Record a blocker and evidence, transition shared state, and release owned locks atomically. |
+| `explain_lock_conflict` | Explain why a requested file set collides with locks held by other agents and suggest a non-conflicting split. Returns the deterministic local split always, plus a Gemini advisory when the cloud plane is configured. Advisory only — never acquires, releases, or overrides a lease. |
+| `log_completion` | Persist completion and verification evidence, complete the linked checklist item, and release owned locks atomically. |
 | `reindex_project` | Regenerate the bounded deterministic project manifest. |
 | `run_project_command` | Request only a trusted registered command; approval policy is enforced server-side. |
 | `project://manifest` | Read the current compressed structural manifest. |
@@ -120,6 +165,7 @@ Deployment is reproducible through [`scripts/deploy-cloud.ps1`](scripts/deploy-c
 ## Architecture and security
 
 - [Practical user and multi-day testing guide](docs/user-guide.md)
+- [Shared workflow and client bootstrap guide](docs/shared-workflow.md)
 - [Architecture and data flows](docs/architecture.md)
 - [Threat boundary and limitations](docs/threat-model.md)
 - [Dependency and license inventory](docs/dependencies.md)

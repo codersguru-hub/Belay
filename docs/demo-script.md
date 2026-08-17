@@ -1,5 +1,49 @@
 # Four-minute AgentMesh demo script
 
+## The Winning Demo Formula — video checklist
+
+Judges evaluate submissions largely from the three-to-four-minute video. Use this flow as the recording checklist, and replace any illustrative metric with the value printed by the current verifier before recording.
+
+### The Hook — 0:00–0:30
+
+**Narration:** “When you run Claude Code and Codex on the same project, two things happen: they burn 40,000 tokens rescanning static files, and they can easily leak your plaintext `.env` database secrets into prompt logs. We built AgentMesh—the local control plane that fixes this.”
+
+Keep the token figure only when the recording includes a measured before/after comparison. Otherwise say “tens of thousands of tokens” and show the actual benchmark output.
+
+### The Speed & Context Win — 0:30–1:15
+
+- Run the deterministic indexer.
+- Show live timing under 100 ms when reproduced on the recording machine.
+- Show the bounded canonical manifest and its estimated token count. The current hero verifier reports approximately 199 tokens; the benchmark fixture may report approximately 275 tokens.
+- Explain that the manifest replaces repeated raw repository scans with stable structural context.
+
+### The Multi-Agent Concurrency Lock — 1:15–2:00
+
+- Show Codex claiming `/src/api/auth.ts`.
+- Switch to Claude Code attempting to claim the same file.
+- Show the immediate conflict rejection, owner/lease information, and stage-context rerouting.
+- Emphasize that SQLite WAL and the atomic acquisition transaction produce one winner and no partial lock state.
+
+### The “Wow Moment” — Zero-Leak Intercept & Human Approval — 2:00–3:00
+
+- Have Claude request a protected staging deploy such as `pm2 reload` (the current built-in demo uses a safe local staging-reload simulation).
+- Show the AgentMesh cockpit’s amber approval card with masked environment variable names and the immutable SHA-256 action digest.
+- Click **Approve** once and show the terminal outcome.
+- Run `npm run verify:no-leaks` to prove that the canary secret was not persisted in SQLite, logs, MCP output, dashboard responses, or cloud fixtures.
+- If the host denies the disposable child boundary, show the `indeterminate` fail-closed result; do not present it as a successful production SSH deployment.
+
+### Google Cloud Run & Gemini Privacy Egress — 3:00–3:45
+
+- Trigger a semantic summary through the private Cloud Run endpoint.
+- Show the Cloud Run revision and Gemini response/request evidence without exposing account identifiers, tokens, cookies, or local gcloud configuration.
+- Follow with the negative test showing raw source and known secrets are blocked locally before network transmission.
+- State that Gemini is advisory and that local coordination, vault policy, indexing, and approvals continue when cloud intelligence is unavailable.
+
+### Final proof — 3:45–4:00
+
+- Show the final verifier summary, architecture diagram, and repository README.
+- Close with: “AgentMesh is the local control plane for shared state, token-efficient context, safe execution, and human authority across heterogeneous coding agents.”
+
 ## Before recording
 
 - Use a 1440×960 or 1920×1080 capture with terminal text at least 16 px.

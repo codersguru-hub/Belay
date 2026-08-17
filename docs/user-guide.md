@@ -9,7 +9,6 @@ Requirements:
 - Node.js 22 or newer
 - npm 10 or newer
 - Git on `PATH`
-- PowerShell, Bash, or another shell that can set environment variables
 - Optional: `age` v1.3.1 or compatible for programmatic vault testing
 
 Clone and verify:
@@ -22,66 +21,122 @@ npm run build
 npm test
 ```
 
-The current baseline is 36 passing tests across 10 files. `npm ci` presently reports 52 moderate and 7 high transitive advisories in the Genkit/Google dependency graph; review [dependencies.md](dependencies.md) before treating the project as production-ready.
+The current baseline is **40 passing tests across 11 files**. Run `npm run verify:no-leaks` to confirm the zero-leak and privacy boundaries.
 
 ## 2. Start AgentMesh for a repository
 
-AgentMesh indexes the directory in `AGENTMESH_PROJECT_ROOT`. The state directory should be outside the repository you are testing so its SQLite files cannot become project content.
+Start the local control plane with a single command:
 
-PowerShell:
+```bash
+# Starts the control plane and opens the Cockpit in your browser
+npm start
+# or via CLI directly:
+npx agentmesh start --open
+```
+
+### Management CLI Commands
+
+```bash
+# Initialize .agentmesh/config.json and git protections in your project
+npm run init
+
+# Run system doctor to verify Node version, ports, age CLI, and cloud connectivity
+npm run doctor
+```
+
+### Custom configuration (Optional)
+
+You can customize parameters via `.agentmesh/config.json`, CLI flags, or environment variables:
+
+```json
+// .agentmesh/config.json
+{
+  "port": 3420,
+  "workspaceName": "agentmesh-suite",
+  "stateDirectory": "~/.agentmesh"
+}
+```
 
 ```powershell
-cd D:\path\to\AgentMesh
-$env:AGENTMESH_PROJECT_ROOT = "D:\path\to\project-under-test"
-$env:AGENTMESH_STATE_DIR = Join-Path $env:LOCALAPPDATA "AgentMesh\test-project"
-$env:AGENTMESH_PORT = "3420"
-npm run start
+# Custom flags example:
+npx agentmesh start -p 3420 -r "D:\path\to\project" -w "suite-alpha" --open
 ```
 
-Bash:
-
-```bash
-cd /path/to/AgentMesh
-export AGENTMESH_PROJECT_ROOT=/path/to/project-under-test
-export AGENTMESH_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/agentmesh/test-project"
-export AGENTMESH_PORT=3420
-npm run start
-```
-
-The terminal prints the MCP URL, SQLite path, and indexed project root. Keep this terminal open.
-
-Check health:
-
-```bash
-curl http://127.0.0.1:3420/healthz
-```
-
-Open the cockpit at [http://127.0.0.1:3420/](http://127.0.0.1:3420/). The server binds only to `127.0.0.1`; do not expose it through a public proxy or port-forward.
+Open the cockpit at [http://127.0.0.1:3420/](http://127.0.0.1:3420/). The server binds strictly to `127.0.0.1`; do not expose it through a public proxy or port-forward.
 
 ### State persistence
 
-Use the same `AGENTMESH_STATE_DIR` on subsequent starts to retain tasks, memory, approvals, and manifest metadata. Use a different directory for each project or test campaign. Back up the state directory before intentionally testing database corruption or recovery.
+By default, persistent data (SQLite WAL database) lives in `~/.agentmesh/state.db`. Use the same state directory on subsequent starts to retain tasks, checklists, memory, approvals, and manifest metadata.
 
-## 3. Connect an MCP client
+## 3. Connect MCP Clients
 
-Configure any MCP client that supports Streamable HTTP to use:
+AgentMesh supports both **Streamable HTTP** and **Standard I/O (stdio)** MCP transports:
+
+### Option A: Streamable HTTP (Claude Code CLI, Antigravity, Codex, Cursor)
+
+Connect to the loopback URL:
 
 ```text
 http://127.0.0.1:3420/mcp
 ```
 
-Client configuration formats change between Claude Code, OpenAI Codex, Antigravity, and other hosts, so use the host's current MCP configuration screen or documentation and select **Streamable HTTP**. No secret or bearer token is required for the MCP endpoint because it is loopback-only. Dashboard mutations use a separate process-local HttpOnly session cookie.
+- **Claude Code (CLI)**:
+  ```bash
+  claude mcp add agentmesh http://127.0.0.1:3420/mcp
+  ```
+- **Antigravity / Gemini**: Add to `.gemini/settings.json`:
+  ```json
+  {
+    "mcpServers": {
+      "agentmesh": {
+        "url": "http://127.0.0.1:3420/mcp"
+      }
+    }
+  }
+  ```
+- **OpenAI Codex / Cursor**: Add to `settings.json` or `.cursor/mcp.json`:
+  ```json
+  {
+    "mcpServers": {
+      "agentmesh": {
+        "url": "http://127.0.0.1:3420/mcp"
+      }
+    }
+  }
+  ```
 
-After connecting, confirm the client can list these tools:
+### Option B: Standard I/O (Claude Desktop App)
 
-- `get_stage_context`
-- `acquire_task`
-- `heartbeat_task`
-- `log_completion`
-- `reindex_project`
-- `run_project_command`
+Claude Desktop only supports `stdio` child processes in `claude_desktop_config.json`. Configure the universal `agentmesh stdio` bridge:
 
-The manifest is also available as the MCP resource `project://manifest`.
+```json
+{
+  "mcpServers": {
+    "agentmesh": {
+      "command": "npx",
+      "args": ["-y", "agentmesh", "stdio"]
+    }
+  }
+}
+```
+
+### Available MCP Surface
+
+After connecting, clients can access all 12 MCP capabilities:
+
+- `get_stage_context` — Read approved pinned knowledge, shared checklist, active tasks, locked paths, and manifest status.
+- `add_checklist_item` — Propose an auditable work item with dependencies and acceptance criteria.
+- `list_checklist` — Read checklist items, progress, blockers, and verification evidence.
+- `propose_knowledge` — Propose durable project/workspace facts (requires human approval of exact payload).
+- `list_knowledge` — Read approved facts, provenance, priority, and supersession history.
+- `acquire_task` — Atomically acquire a task and lock repository-relative files under a single lease.
+- `heartbeat_task` — Extend active task leases for longer-running execution.
+- `report_task_progress` — Append idempotent progress events with evidence.
+- `block_task` — Record a blocker and release locked files atomically.
+- `log_completion` — Persist completion and verification evidence, and release file locks atomically.
+- `reindex_project` — Regenerate the bounded deterministic project manifest.
+- `run_project_command` — Execute registered policy-gated commands with masked secret injection.
+- `project://manifest` — MCP resource providing compact structural repository context.
 
 ## 4. Recommended agent workflow
 

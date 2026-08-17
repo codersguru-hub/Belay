@@ -14,7 +14,7 @@ This is a local preparation inventory. Nothing in this file means the project ha
 
 - [x] Clean `npm ci` completed.
 - [x] Workspace build passed.
-- [x] Full suite passed: 36 tests across 10 files.
+- [x] Full suite passed: 40 tests across 11 files.
 - [x] Integrated hero verifier passed.
 - [x] Expanded canary/leak verifier passed.
 - [x] Private Cloud Run/Gemini smoke evidence recorded.
@@ -22,6 +22,7 @@ This is a local preparation inventory. Nothing in this file means the project ha
 - [x] Exact minimal cloud upload boundary documented.
 - [x] Architecture source, editable SVG, and Devpost-compatible 1440×900 PNG export included.
 - [x] Threat boundary, limitations, dependencies, and audit status disclosed.
+- [x] Approval-backed project/workspace knowledge, pinned context, provenance, and supersession tests passed.
 
 ## Screenshot inventory
 

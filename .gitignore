@@ -32,3 +32,4 @@ handoff.md
 Thumbs.db
 .idea/
 .vscode/
+.claude/launch.json
