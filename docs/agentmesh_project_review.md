@@ -161,16 +161,16 @@ AgentMesh/
 
 | Test File | Tests | Status | Coverage Area |
 |:---|:---|:---|:---|
-| [`db.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/db.integration.test.ts) | 4 | ✅ | WAL mode, migrations, foreign keys, atomic transactions |
-| [`mcp.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/mcp.integration.test.ts) | 3 | ✅ | MCP Streamable HTTP tools: context, acquire, complete |
-| [`coordination-recovery.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/coordination-recovery.integration.test.ts) | 4 | ✅ | Lease expiry, heartbeat, restart recovery, idempotency |
-| [`indexer.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/indexer.integration.test.ts) | 3 | ✅ | Determinism, truncation, local-state directory pruning |
-| [`vault.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/vault.integration.test.ts) | 4 | ✅ | Round-trip, wrong-key rejection, tamper detection, buffer cleanup |
-| [`executor.security.test.ts`](file:///d:/Projects/AgentMesh/tests/executor.security.test.ts) | 5 | ✅ | Streaming redaction, shell escape rejection, vault-locked fail-closed, timeout, cross-boundary secrets |
-| [`approval.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/approval.integration.test.ts) | 4 | ✅ | Pending/reject/approve/replay-protection flows |
-| [`dashboard.component.test.tsx`](file:///d:/Projects/AgentMesh/tests/dashboard.component.test.tsx) | 4 | ✅ | React component rendering and state |
-| [`cloud-egress.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/cloud-egress.integration.test.ts) | 8 | ✅ | Allowed schema, raw source block, unknown key block, private key block, connection string block, oversized block, known secret block, cloud failure degradation |
-| [`hero-demo.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/hero-demo.integration.test.ts) | 1 | ✅ | End-to-end: manifest + collision + zero-leak + approval + cloud egress + restart recovery |
+| [`db.integration.test.ts`](tests/db.integration.test.ts) | 4 | ✅ | WAL mode, migrations, foreign keys, atomic transactions |
+| [`mcp.integration.test.ts`](tests/mcp.integration.test.ts) | 3 | ✅ | MCP Streamable HTTP tools: context, acquire, complete |
+| [`coordination-recovery.integration.test.ts`](tests/coordination-recovery.integration.test.ts) | 4 | ✅ | Lease expiry, heartbeat, restart recovery, idempotency |
+| [`indexer.integration.test.ts`](tests/indexer.integration.test.ts) | 3 | ✅ | Determinism, truncation, local-state directory pruning |
+| [`vault.integration.test.ts`](tests/vault.integration.test.ts) | 4 | ✅ | Round-trip, wrong-key rejection, tamper detection, buffer cleanup |
+| [`executor.security.test.ts`](tests/executor.security.test.ts) | 5 | ✅ | Streaming redaction, shell escape rejection, vault-locked fail-closed, timeout, cross-boundary secrets |
+| [`approval.integration.test.ts`](tests/approval.integration.test.ts) | 4 | ✅ | Pending/reject/approve/replay-protection flows |
+| [`dashboard.component.test.tsx`](tests/dashboard.component.test.tsx) | 4 | ✅ | React component rendering and state |
+| [`cloud-egress.integration.test.ts`](tests/cloud-egress.integration.test.ts) | 8 | ✅ | Allowed schema, raw source block, unknown key block, private key block, connection string block, oversized block, known secret block, cloud failure degradation |
+| [`hero-demo.integration.test.ts`](tests/hero-demo.integration.test.ts) | 1 | ✅ | End-to-end: manifest + collision + zero-leak + approval + cloud egress + restart recovery |
 
 **Total: 10 files, 36 tests, all passing.**
 
@@ -202,7 +202,7 @@ AgentMesh/
 
 ### 5.1 Contracts Layer
 
-**Files:** [`index.ts`](file:///d:/Projects/AgentMesh/packages/contracts/src/index.ts), [`mcp.ts`](file:///d:/Projects/AgentMesh/packages/contracts/src/mcp.ts), [`manifest.ts`](file:///d:/Projects/AgentMesh/packages/contracts/src/manifest.ts), [`executor.ts`](file:///d:/Projects/AgentMesh/packages/contracts/src/executor.ts), [`vault.ts`](file:///d:/Projects/AgentMesh/packages/contracts/src/vault.ts), [`cloud.ts`](file:///d:/Projects/AgentMesh/packages/contracts/src/cloud.ts), [`events.ts`](file:///d:/Projects/AgentMesh/packages/contracts/src/events.ts), [`ids.ts`](file:///d:/Projects/AgentMesh/packages/contracts/src/ids.ts)
+**Files:** [`index.ts`](packages/contracts/src/index.ts), [`mcp.ts`](packages/contracts/src/mcp.ts), [`manifest.ts`](packages/contracts/src/manifest.ts), [`executor.ts`](packages/contracts/src/executor.ts), [`vault.ts`](packages/contracts/src/vault.ts), [`cloud.ts`](packages/contracts/src/cloud.ts), [`events.ts`](packages/contracts/src/events.ts), [`ids.ts`](packages/contracts/src/ids.ts)
 
 **Assessment:** ✅ Excellent
 
@@ -219,16 +219,16 @@ AgentMesh/
 
 ### 5.2 Coordination & Lock Engine
 
-**Files:** [`coordination-service.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/coordination/coordination-service.ts) (576 lines), [`lease-service.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/coordination/lease-service.ts), [`lease-reaper.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/coordination/lease-reaper.ts), [`path-normalizer.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/coordination/path-normalizer.ts), [`errors.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/coordination/errors.ts)
+**Files:** [`coordination-service.ts`](packages/daemon/src/coordination/coordination-service.ts) (576 lines), [`lease-service.ts`](packages/daemon/src/coordination/lease-service.ts), [`lease-reaper.ts`](packages/daemon/src/coordination/lease-reaper.ts), [`path-normalizer.ts`](packages/daemon/src/coordination/path-normalizer.ts), [`errors.ts`](packages/daemon/src/coordination/errors.ts)
 
 **Assessment:** ✅ Excellent
 
 | Feature | Implementation | Verification |
 |:---|:---|:---|
-| Single-winner lock acquisition | `BEGIN IMMEDIATE` SQLite transaction | [`mcp.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/mcp.integration.test.ts), [`coordination-recovery.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/coordination-recovery.integration.test.ts) |
-| Path traversal prevention | Rejects `..`, absolute paths, paths outside project root | [`path-normalizer.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/coordination/path-normalizer.ts) |
+| Single-winner lock acquisition | `BEGIN IMMEDIATE` SQLite transaction | [`mcp.integration.test.ts`](tests/mcp.integration.test.ts), [`coordination-recovery.integration.test.ts`](tests/coordination-recovery.integration.test.ts) |
+| Path traversal prevention | Rejects `..`, absolute paths, paths outside project root | [`path-normalizer.ts`](packages/daemon/src/coordination/path-normalizer.ts) |
 | Idempotency replay | Same task ID + matching key returns cached result; mismatched key throws `IDEMPOTENCY_MISMATCH` | Tested in recovery suite |
-| Lease expiry & heartbeat | Background `LeaseReaper` sweeps expired leases; `heartbeatTask` renews | [`coordination-recovery.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/coordination-recovery.integration.test.ts) |
+| Lease expiry & heartbeat | Background `LeaseReaper` sweeps expired leases; `heartbeatTask` renews | [`coordination-recovery.integration.test.ts`](tests/coordination-recovery.integration.test.ts) |
 | Bounded context response | `maxContextBytes` with deterministic truncation tracking | Response omission counters |
 | `SQLITE_BUSY` handling | Caught specifically, wrapped as retryable `DATABASE_BUSY` error | Error handling in coordination-service |
 | Agent ownership enforcement | Completion and heartbeat verify `agentName` matches task owner | `TASK_OWNERSHIP_MISMATCH` code |
@@ -239,7 +239,7 @@ AgentMesh/
 
 ### 5.3 Deterministic Indexer
 
-**Files:** [`manifest-service.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/indexer/manifest-service.ts) (261 lines), [`file-discovery.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/indexer/file-discovery.ts) (177 lines), [`parsers.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/indexer/parsers.ts) (258 lines), [`canonical-json.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/indexer/canonical-json.ts), [`manifest-watcher.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/indexer/manifest-watcher.ts)
+**Files:** [`manifest-service.ts`](packages/daemon/src/indexer/manifest-service.ts) (261 lines), [`file-discovery.ts`](packages/daemon/src/indexer/file-discovery.ts) (177 lines), [`parsers.ts`](packages/daemon/src/indexer/parsers.ts) (258 lines), [`canonical-json.ts`](packages/daemon/src/indexer/canonical-json.ts), [`manifest-watcher.ts`](packages/daemon/src/indexer/manifest-watcher.ts)
 
 **Assessment:** ✅ Excellent
 
@@ -258,7 +258,7 @@ AgentMesh/
 
 ### 5.4 Vault & Secret Injection
 
-**Files:** [`vault-service.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/vault/vault-service.ts) (434 lines), [`age-cli-adapter.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/vault/age-cli-adapter.ts) (141 lines), [`atomic-file.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/vault/atomic-file.ts), [`errors.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/vault/errors.ts)
+**Files:** [`vault-service.ts`](packages/daemon/src/vault/vault-service.ts) (434 lines), [`age-cli-adapter.ts`](packages/daemon/src/vault/age-cli-adapter.ts) (141 lines), [`atomic-file.ts`](packages/daemon/src/vault/atomic-file.ts), [`errors.ts`](packages/daemon/src/vault/errors.ts)
 
 **Assessment:** ✅ Excellent — with one platform caveat
 
@@ -281,7 +281,7 @@ AgentMesh/
 
 ### 5.5 Command Executor & Redaction
 
-**Files:** [`command-executor.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/executor/command-executor.ts) (319 lines), [`command-registry.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/executor/command-registry.ts) (282 lines), [`secret-redactor.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/executor/secret-redactor.ts) (94 lines)
+**Files:** [`command-executor.ts`](packages/daemon/src/executor/command-executor.ts) (319 lines), [`command-registry.ts`](packages/daemon/src/executor/command-registry.ts) (282 lines), [`secret-redactor.ts`](packages/daemon/src/executor/secret-redactor.ts) (94 lines)
 
 **Assessment:** ✅ Excellent
 
@@ -299,13 +299,13 @@ AgentMesh/
 
 **Redaction Algorithm Detail:**
 
-The [`StreamingSecretRedactor`](file:///d:/Projects/AgentMesh/packages/daemon/src/executor/secret-redactor.ts#L63-L93) maintains a pending buffer and only flushes content up to `length - (maxPatternLength - 1)`, ensuring that secrets split across chunk boundaries are caught. The `crossesBoundary` method detects partial pattern matches spanning the flush cutoff and delays flushing to prevent partial leaks. This is verified by the ["holds incomplete encoded patterns across arbitrary stream boundaries"](file:///d:/Projects/AgentMesh/tests/executor.security.test.ts) test.
+The [`StreamingSecretRedactor`](packages/daemon/src/executor/secret-redactor.ts#L63-L93) maintains a pending buffer and only flushes content up to `length - (maxPatternLength - 1)`, ensuring that secrets split across chunk boundaries are caught. The `crossesBoundary` method detects partial pattern matches spanning the flush cutoff and delays flushing to prevent partial leaks. This is verified by the ["holds incomplete encoded patterns across arbitrary stream boundaries"](tests/executor.security.test.ts) test.
 
 ---
 
 ### 5.6 Policy Engine & Human Approval
 
-**Files:** [`approval-service.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/approval/approval-service.ts) (358 lines), [`policy-engine.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/approval/policy-engine.ts), [`action-digest.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/approval/action-digest.ts), [`event-hub.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/approval/event-hub.ts)
+**Files:** [`approval-service.ts`](packages/daemon/src/approval/approval-service.ts) (358 lines), [`policy-engine.ts`](packages/daemon/src/approval/policy-engine.ts), [`action-digest.ts`](packages/daemon/src/approval/action-digest.ts), [`event-hub.ts`](packages/daemon/src/approval/event-hub.ts)
 
 **Assessment:** ✅ Excellent
 
@@ -341,7 +341,7 @@ stateDiagram-v2
 
 ### 5.7 Cloud Intelligence & Egress Guard
 
-**Files:** [`cloud-intelligence-service.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/cloud/cloud-intelligence-service.ts) (153 lines), [`egress-guard.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/cloud/egress-guard.ts) (121 lines), [`cloud-run-adapter.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/cloud/cloud-run-adapter.ts) (44 lines), [`cloud-service/index.ts`](file:///d:/Projects/AgentMesh/packages/cloud-service/src/index.ts) (135 lines)
+**Files:** [`cloud-intelligence-service.ts`](packages/daemon/src/cloud/cloud-intelligence-service.ts) (153 lines), [`egress-guard.ts`](packages/daemon/src/cloud/egress-guard.ts) (121 lines), [`cloud-run-adapter.ts`](packages/daemon/src/cloud/cloud-run-adapter.ts) (44 lines), [`cloud-service/index.ts`](packages/cloud-service/src/index.ts) (135 lines)
 
 **Assessment:** ✅ Excellent
 
@@ -373,7 +373,7 @@ stateDiagram-v2
 
 ### 5.8 MCP Server & Transport
 
-**Files:** [`create-server.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/mcp/create-server.ts), [`tool-result.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/mcp/tool-result.ts), [`mcp-transport.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/server/mcp-transport.ts), 6 tool files, 1 resource file
+**Files:** [`create-server.ts`](packages/daemon/src/mcp/create-server.ts), [`tool-result.ts`](packages/daemon/src/mcp/tool-result.ts), [`mcp-transport.ts`](packages/daemon/src/server/mcp-transport.ts), 6 tool files, 1 resource file
 
 **Assessment:** ✅ Solid
 
@@ -391,13 +391,13 @@ stateDiagram-v2
 
 **Transport:** MCP v2 Streamable HTTP with per-session server instances, session tracking, and proper cleanup on disconnect.
 
-**Error Handling:** All tool errors are wrapped through [`toToolError`](file:///d:/Projects/AgentMesh/packages/daemon/src/coordination/errors.ts) producing sanitized `ToolError` responses with correlation IDs. Stack traces never leak to agents.
+**Error Handling:** All tool errors are wrapped through [`toToolError`](packages/daemon/src/coordination/errors.ts) producing sanitized `ToolError` responses with correlation IDs. Stack traces never leak to agents.
 
 ---
 
 ### 5.9 HTTP Server & Dashboard API
 
-**Files:** [`http-server.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/server/http-server.ts), [`dashboard-api.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/server/dashboard-api.ts), [`static-dashboard.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/server/static-dashboard.ts), [`approval-websocket.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/server/approval-websocket.ts), [`dashboard-service.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/dashboard/dashboard-service.ts)
+**Files:** [`http-server.ts`](packages/daemon/src/server/http-server.ts), [`dashboard-api.ts`](packages/daemon/src/server/dashboard-api.ts), [`static-dashboard.ts`](packages/daemon/src/server/static-dashboard.ts), [`approval-websocket.ts`](packages/daemon/src/server/approval-websocket.ts), [`dashboard-service.ts`](packages/daemon/src/dashboard/dashboard-service.ts)
 
 **Assessment:** ✅ Solid
 
@@ -429,7 +429,7 @@ stateDiagram-v2
 
 ### 5.10 React Dashboard (Cockpit)
 
-**Files:** [`App.tsx`](file:///d:/Projects/AgentMesh/packages/dashboard/src/App.tsx) (275 lines), [`use-dashboard.ts`](file:///d:/Projects/AgentMesh/packages/dashboard/src/use-dashboard.ts) (96 lines), [`types.ts`](file:///d:/Projects/AgentMesh/packages/dashboard/src/types.ts), [`styles.css`](file:///d:/Projects/AgentMesh/packages/dashboard/src/styles.css) (620 lines)
+**Files:** [`App.tsx`](packages/dashboard/src/App.tsx) (275 lines), [`use-dashboard.ts`](packages/dashboard/src/use-dashboard.ts) (96 lines), [`types.ts`](packages/dashboard/src/types.ts), [`styles.css`](packages/dashboard/src/styles.css) (620 lines)
 
 **Assessment:** ✅ Good — minor UI observations
 
@@ -478,7 +478,7 @@ stateDiagram-v2
 
 ### 5.11 Database Layer
 
-**Files:** [`connection.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/db/connection.ts), [`migrate.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/db/migrate.ts), 6 migration files, 7 repository files
+**Files:** [`connection.ts`](packages/daemon/src/db/connection.ts), [`migrate.ts`](packages/daemon/src/db/migrate.ts), 6 migration files, 7 repository files
 
 **Assessment:** ✅ Solid
 
@@ -595,8 +595,8 @@ The hero demo test injects a known canary secret and scans **9 artifact categori
 | Metric | Value |
 |:---|:---|
 | **Total source files (excluding tests/scripts)** | ~55 |
-| **Largest file** | [`coordination-service.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/coordination/coordination-service.ts) — 576 lines |
-| **Largest test** | [`hero-demo.integration.test.ts`](file:///d:/Projects/AgentMesh/tests/hero-demo.integration.test.ts) — 514 lines |
+| **Largest file** | [`coordination-service.ts`](packages/daemon/src/coordination/coordination-service.ts) — 576 lines |
+| **Largest test** | [`hero-demo.integration.test.ts`](tests/hero-demo.integration.test.ts) — 514 lines |
 | **Contracts package** | 8 files, ~550 lines total |
 | **Cloud service** | 1 file, 135 lines |
 | **Dashboard** | 6 files, ~1,070 lines total (275 TSX + 620 CSS + 96 hook + 60 types) |
@@ -611,7 +611,7 @@ The hero demo test injects a known canary secret and scans **9 artifact categori
 > [!CAUTION]
 > **Windows NTFS File Permission Gap**
 > 
-> [`atomic-file.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/vault/atomic-file.ts) calls `chmodSync(path, 0o600)` which has no meaningful effect on Windows NTFS. On multi-user Windows systems, vault files inherit directory ACLs and may be readable by other local accounts.
+> [`atomic-file.ts`](packages/daemon/src/vault/atomic-file.ts) calls `chmodSync(path, 0o600)` which has no meaningful effect on Windows NTFS. On multi-user Windows systems, vault files inherit directory ACLs and may be readable by other local accounts.
 > 
 > **Impact:** Secret exposure to other local users on shared Windows machines.  
 > **Likelihood:** Low for the target user (solo developer), but significant if adopted in enterprise multi-user environments.  
@@ -638,7 +638,7 @@ The hero demo test injects a known canary secret and scans **9 artifact categori
 > [!WARNING]
 > **`index.ts` Top-Level Side Effects**
 > 
-> [`index.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/index.ts) executes `createAgentMeshApp()` and `await app.start()` at module evaluation time. Importing any re-exported utility (e.g., `openStateDatabase`, `CoordinationService`) from this module **automatically starts the daemon and binds to the network port**. The top-level `await` and signal handlers also lack `try/catch` guards.
+> [`index.ts`](packages/daemon/src/index.ts) executes `createAgentMeshApp()` and `await app.start()` at module evaluation time. Importing any re-exported utility (e.g., `openStateDatabase`, `CoordinationService`) from this module **automatically starts the daemon and binds to the network port**. The top-level `await` and signal handlers also lack `try/catch` guards.
 > 
 > **Impact:** Prevents clean library-style imports of daemon internals. Startup failures (e.g., `EADDRINUSE`) produce unhandled promise rejections.
 > **Remediation:** Separate the CLI/server entry point (e.g., `cli.ts`) from the library re-exports in `index.ts`.
@@ -646,7 +646,7 @@ The hero demo test injects a known canary secret and scans **9 artifact categori
 > [!WARNING]
 > **`ApprovalEventHub` Subscriber Isolation**
 > 
-> [`event-hub.ts`](file:///d:/Projects/AgentMesh/packages/daemon/src/approval/event-hub.ts) `publish()` iterates subscribers synchronously without `try/catch`. If one subscriber throws, subsequent subscribers miss the event, and the caller's execution flow is interrupted.
+> [`event-hub.ts`](packages/daemon/src/approval/event-hub.ts) `publish()` iterates subscribers synchronously without `try/catch`. If one subscriber throws, subsequent subscribers miss the event, and the caller's execution flow is interrupted.
 > 
 > **Impact:** A misbehaving WebSocket broadcast handler could prevent approval state transitions from completing.
 > **Remediation:** Wrap each subscriber callback in `try/catch` within `publish()`.

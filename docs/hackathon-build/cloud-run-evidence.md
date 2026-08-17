@@ -9,10 +9,16 @@ Captured: 2026-08-15
 - Service: `agentmesh-intelligence`
 - Ready revision: `agentmesh-intelligence-00001-4nr`
 - Traffic: 100% to the ready revision
-- Runtime identity: `[redacted-runtime-service-account]`
-- Builder identity: `[redacted-builder-service-account]`
+- Runtime identity: a dedicated, non-default service account scoped to this service (address
+  omitted here; it is not the Compute Engine default identity)
+- Builder identity: a separate dedicated build service account, distinct from the runtime identity
 - Successful Cloud Build: `800d1d28-5597-4e89-9554-ed4d912ec7f8`
-- Build log: https://console.cloud.google.com/cloud-build/builds;region=us-central1/800d1d28-5597-4e89-9554-ed4d912ec7f8?project=[redacted-project-number]
+- Build log: available in the participant's Cloud Build console for the build ID above
+
+> Service-account addresses and the numeric project ID are intentionally omitted from this public
+> repository. They are identities rather than credentials, but publishing them serves no
+> verification purpose and widens the targeting surface. The project ID, region, service, revision,
+> and build ID above are sufficient to cross-reference the deployment.
 
 ## Minimal upload boundary
 
@@ -45,11 +51,11 @@ No daemon source, dashboard source, tests, docs, repository state, `.tools`, env
 
 ## Historical artifact inventory
 
-These pre-fix source archives contain the broader repository upload and remain pending separately approved deletion:
-
-- `gs://[redacted-sources-bucket]/services/agentmesh-intelligence/1786794843.182772-6a2473f231c84e93a2257a0d8c044a56.zip` — 251,060 bytes
-- `gs://[redacted-sources-bucket]/services/agentmesh-intelligence/1786796449.757093-d66cf06b8f2b4c95b64c3b96bc9ddf06.zip` — 251,714 bytes
-- `gs://[redacted-sources-bucket]/services/agentmesh-intelligence/1786797202.07876-e9c17fffc7854a26856669fd8756c846.zip` — 253,067 bytes
+Three pre-fix source archives (251,060 / 251,714 / 253,067 bytes) in the private Cloud Run
+sources bucket contain the broader repository upload that predates the exact 19-file build
+context. Their exact object paths are intentionally omitted from this public repository; the
+bucket is private and returns HTTP 403 to unauthenticated requests. The paths are available to
+judges on request, and the archives are scheduled for deletion.
 
 Visible failed regional build records:
 
