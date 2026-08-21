@@ -4,6 +4,14 @@
   "private": true,
   "type": "module",
   "description": "Local-first control plane for heterogeneous coding agent fleets.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codersguru-hub/Belay.git"
+  },
+  "homepage": "https://github.com/codersguru-hub/Belay#readme",
+  "bugs": {
+    "url": "https://github.com/codersguru-hub/Belay/issues"
+  },
   "bin": {
     "belay": "./bin/belay.js"
   },
