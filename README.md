@@ -123,6 +123,29 @@ npm run demo:request-approval
 
 The built-in action simulates a staging reload with a local Node process. It is not a production SSH deployment adapter.
 
+### Reaching the cockpit from another device
+
+The cockpit is mobile-responsive and installable as a home-screen app, so you can approve actions
+from a phone or tablet. Getting *to* it is deliberately your call, not Belay's: the daemon binds
+to `127.0.0.1` only, rejects forwarded routing headers, and has no flag to listen on a public
+interface. That boundary is the point — the approval gate is what stands between an agent and
+your commands and secrets, so it is never exposed directly.
+
+The supported pattern is an SSH tunnel, which keeps the browser on loopback where Belay expects it:
+
+```bash
+# From the remote device (or any machine with SSH access to the host):
+ssh -N -L 3450:127.0.0.1:3420 your-host
+```
+
+Then open `http://127.0.0.1:3450/` on that device. On iOS/Android, any SSH client with local
+port forwarding (Termius, Blink, ConnectBot) does the same thing; `127.0.0.1` counts as a
+secure context, so **Add to Home Screen** works over the tunnel.
+
+Do not put a reverse proxy in front of Belay expecting it to work: standard `X-Forwarded-*`
+headers are rejected with a `403` by design. A private network (WireGuard, Tailscale, an
+existing VPN) still needs the SSH hop above, since nothing listens on the VPN interface either.
+
 ## MCP surface
 
 | Capability | Purpose |
