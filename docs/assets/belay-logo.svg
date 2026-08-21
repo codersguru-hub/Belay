@@ -12,6 +12,6 @@
     <rect x="74" y="46" width="54" height="112" rx="27" fill="none" stroke="#64748b" stroke-width="16"/>
     <path d="M 104 96 C 132 122 134 152 112 168 C 94 181 66 174 46 182" fill="none" stroke="url(#ropeL)" stroke-width="16" stroke-linecap="round"/>
   </g>
-  <text x="152" y="108" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="78" font-weight="700" fill="currentColor" letter-spacing="-2.5">Belay</text>
+  <text x="152" y="108" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="78" font-weight="700" fill="#f8fafc" letter-spacing="-2.5">Belay</text>
   <text x="156" y="144" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="17" font-weight="500" fill="#94a3b8" letter-spacing="3">CONTROL PLANE FOR AGENT FLEETS</text>
 </svg>

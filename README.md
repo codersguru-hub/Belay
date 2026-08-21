@@ -6,7 +6,7 @@
 
 Belay lets Claude Code, OpenAI Codex, Antigravity, and other MCP clients work independently against one repository without losing shared context or colliding on protected files. The sensitive enforcement plane stays local. Gemini on Cloud Run acts as the Cloud Arbiter and Fleet Intelligence Engine: it decomposes high-level goals, assigns agent/file-lease topology, adjudicates conflicts, and explains risk using schema-validated metadata only. It cannot read source bodies, access the vault, authorize execution, or override SQLite-WAL policy.
 
-![Belay Cockpit](docs/screenshots/belay-cockpit.png)
+![Belay Cockpit](docs/screenshots/belay-cockpit-v2.png)
 
 ## What works
 
