@@ -987,6 +987,119 @@ function Sidebar({
   );
 }
 
+/**
+ * Tracks whether the viewport is narrower than the given breakpoint.
+ * Guards `window.matchMedia` (unavailable in some test/SSR environments) and
+ * defaults to `false` so desktop rendering never regresses when it's absent.
+ */
+function useIsMobileViewport(breakpointPx = 768): boolean {
+  const query = `(max-width: ${breakpointPx - 1}px)`;
+  const getMatches = () =>
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia(query).matches
+      : false;
+  const [isMobile, setIsMobile] = useState(getMatches);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mql = window.matchMedia(query);
+    const onChange = () => setIsMobile(mql.matches);
+    onChange();
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    }
+    // Safari < 14 fallback.
+    mql.addListener(onChange);
+    return () => mql.removeListener(onChange);
+  }, [query]);
+
+  return isMobile;
+}
+
+const MOBILE_NAVIGATION = [
+  ["overview", "Overview"],
+  ["agents", "Agents"],
+  ["approval", "Approvals"],
+  ["audit", "Audit"]
+] as const;
+
+function MobileBottomNav({
+  activeNav,
+  onSelectNav
+}: {
+  activeNav: string;
+  onSelectNav: (id: string, e: React.MouseEvent) => void;
+}) {
+  return (
+    <nav className="mobile-bottom-nav" aria-label="Cockpit sections">
+      {MOBILE_NAVIGATION.map(([id, label]) => {
+        const isActive = activeNav === id;
+        return (
+          <a
+            key={id}
+            href={`#${id}`}
+            className={`mobile-nav-item ${isActive ? "active" : ""}`}
+            aria-current={isActive ? "page" : undefined}
+            onClick={(e) => onSelectNav(id, e)}
+          >
+            <span className="nav-icon"><NavIcon id={id} /></span>
+            <span className="mobile-nav-label">{label}</span>
+          </a>
+        );
+      })}
+    </nav>
+  );
+}
+
+/**
+ * Mobile-only presentation layer for a pending approval. Reuses the exact
+ * `approval`/`pending`/`onDecision` wiring already driving the desktop
+ * ApprovalCard — no approval state or API logic is duplicated here.
+ */
+function MobileApprovalSheet({
+  approval,
+  pending,
+  onDecision
+}: {
+  approval: PendingApproval;
+  pending: boolean;
+  onDecision: (decision: "approve" | "reject") => void;
+}) {
+  const isCommand = approval.actionKind === "command";
+  const title = isCommand
+    ? `Execute ${approval.commandId}`
+    : `Approve ${approval.knowledge?.kind ?? "knowledge"} fact`;
+
+  return (
+    <div className="mobile-approval-sheet" role="alertdialog" aria-labelledby="mobile-approval-title">
+      <div className="mobile-approval-sheet-head">
+        <span className="eyebrow amber">HUMAN APPROVAL REQUIRED</span>
+        <h2 id="mobile-approval-title">{title}</h2>
+        <p className="mobile-approval-meta">{approval.requester} → <span className="target-chip">{approval.targetAlias}</span></p>
+      </div>
+      <div className="mobile-approval-actions">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => onDecision("reject")}
+          className="button button-reject mobile-approval-btn"
+        >
+          Reject
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => onDecision("approve")}
+          className="button button-approve mobile-approval-btn"
+        >
+          Approve &amp; Execute
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export interface CockpitViewProps {
   snapshot: DashboardSnapshot;
   error: string | null;
@@ -1019,6 +1132,7 @@ export function CockpitView({
   const approval = snapshot.approvals[0];
   const [collapsedPanels, setCollapsedPanels] = useState<Record<string, boolean>>({});
   const [activeNav, setActiveNav] = useState("overview");
+  const isMobile = useIsMobileViewport();
 
   const togglePanel = (panelId: string) => {
     setCollapsedPanels((prev) => ({ ...prev, [panelId]: !prev[panelId] }));
@@ -1180,6 +1294,15 @@ export function CockpitView({
 
         <footer><span>Generated {new Date(snapshot.generatedAt).toLocaleTimeString()}</span><span>{snapshot.service.cloudMessage}</span></footer>
       </main>
+
+      {isMobile && <MobileBottomNav activeNav={activeNav} onSelectNav={handleSelectNav} />}
+      {isMobile && approval && (
+        <MobileApprovalSheet
+          approval={approval}
+          pending={decisionPending === approval.approvalId}
+          onDecision={(decision) => void onDecision(approval, decision)}
+        />
+      )}
     </div>
   );
 }

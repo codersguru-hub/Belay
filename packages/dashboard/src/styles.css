@@ -1559,9 +1559,65 @@
 .checklist-list { gap: 10px; }
 .checklist-item { background: #080e1a; border-color: #1e293b; }
 .checklist-item:hover { border-color: #334155; }
-.approval-empty { background: #0c1322; border-color: #1e293b; }
-.approval-card { border-color: rgb(240 181 77 / 38%); background: #0c1322; }
-.knowledge-glance, .agent-detail { background: #080e1a; border-color: #1e293b; }
+.approval-card {
+  border-color: rgb(240 181 77 / 38%);
+  background: #0c1322;
+  padding: 16px;
+}
+.approval-card .approval-head {
+  margin-bottom: 10px;
+}
+.approval-card .action-grid {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr);
+  gap: 4px 8px;
+  font-size: 11.5px;
+}
+.approval-card .knowledge-preview {
+  margin-top: 10px;
+  padding-top: 9px;
+}
+.approval-card .knowledge-preview strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+.approval-card .knowledge-preview p {
+  margin: 4px 0;
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.4;
+  max-height: 70px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  word-break: break-word;
+}
+.approval-card .policy-reason {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: rgba(240, 181, 77, 0.06);
+  border-radius: 6px;
+  border-left: 2px solid #f59e0b;
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+.approval-card .approval-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+.approval-card .button {
+  min-height: 36px;
+  font-size: 11.5px;
+}
+.overview-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-self: start;
+}
 .audit-list li { border-top-color: #162032; }
 .manifest-dl dd, .audit-outcome { color: #94a3b8; }
 
@@ -2570,6 +2626,105 @@
 .rail-panel.is-collapsed .rail-panel-heading,
 .panel.is-collapsed .approval-head {
   margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Mobile cockpit (< 768px): bottom nav dock + approval bottom sheet.        */
+/* Desktop (>= 768px) is untouched — this block only ever applies below the  */
+/* breakpoint, and the nav/sheet markup only mounts on mobile viewports.     */
+/* ------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  .codex-sidebar { display: none; }
+  .workspace { height: 100dvh; max-height: 100dvh; }
+  .cockpit {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+  .overview-grid { grid-template-columns: 1fr; }
+  .overview-rail { grid-template-columns: 1fr; }
+  .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.mobile-bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  height: calc(60px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: #0b1120;
+  border-top: 1px solid #162032;
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 30%);
+}
+.mobile-nav-item {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 48px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+.mobile-nav-item .nav-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+.mobile-nav-item.active {
+  color: #38bdf8;
+}
+.mobile-nav-item:active {
+  background: #111a2e;
+}
+
+.mobile-approval-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  z-index: 31;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, rgb(52 41 23 / 92%), #0c1017 46%);
+  border-top: 1px solid rgb(240 181 77 / 40%);
+  box-shadow: 0 -10px 28px rgb(0 0 0 / 40%);
+}
+.mobile-approval-sheet-head { margin-bottom: 12px; }
+.mobile-approval-sheet-head h2 {
+  margin: 4px 0 6px;
+  font-size: 16px;
+  color: var(--text);
+}
+.mobile-approval-meta {
+  margin: 0;
+  color: var(--secondary);
+  font-size: 12px;
+}
+.mobile-approval-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 10px;
+}
+.mobile-approval-btn {
+  min-height: 48px;
+  font-size: 13px;
+}
+
+@media (min-width: 768px) {
+  .mobile-bottom-nav,
+  .mobile-approval-sheet {
+    display: none;
+  }
 }
 
 
