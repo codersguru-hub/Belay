@@ -2417,20 +2417,32 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid #2563eb;
+  border: 1px solid #1e293b;
   border-radius: 999px;
   padding: 5px 12px;
-  background: #1d4ed8;
-  color: #ffffff;
+  background: #111a2e;
+  color: #cbd5e1;
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 .btn-fleet-plan-primary:hover {
-  background: #2563eb;
-  box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+  border-color: #38bdf8;
+  color: #f8fafc;
+  background: #17243f;
+}
+.btn-fleet-plan-primary.active {
+  border-color: #38bdf8;
+  background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+}
+.btn-fleet-plan-primary.active:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.55);
 }
 .agent-effort-dropdown-wrapper {
   position: relative;
