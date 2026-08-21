@@ -19,58 +19,6 @@ export const NAVIGATION = [
   ["p", "approval", "Policies"]
 ] as const;
 
-export function MeshMark() {
-  return (
-    <svg className="mesh-mark" viewBox="0 0 32 32" aria-hidden="true">
-      <defs>
-        <linearGradient id="mmTop" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#7dd3fc" />
-          <stop offset="100%" stopColor="#0284c7" />
-        </linearGradient>
-        <linearGradient id="mmLeft" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#0369a1" />
-          <stop offset="100%" stopColor="#0c4a6e" />
-        </linearGradient>
-        <linearGradient id="mmRight" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#818cf8" />
-          <stop offset="100%" stopColor="#3730a3" />
-        </linearGradient>
-        <filter id="meshGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="1.5" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-      </defs>
-      {/* Outer Hexagonal Shield Boundary */}
-      <polygon
-        points="16,4 26.5,10 26.5,22 16,28 5.5,22 5.5,10"
-        fill="#080e1a"
-        stroke="#38bdf8"
-        strokeOpacity="0.4"
-        strokeWidth="1.2"
-      />
-      {/* Mesh Spoke Rays */}
-      <line x1="16" y1="4" x2="16" y2="11.5" stroke="#38bdf8" strokeWidth="1.2" strokeOpacity="0.7" />
-      <line x1="26.5" y1="10" x2="20.5" y2="13.5" stroke="#818cf8" strokeWidth="1.2" strokeOpacity="0.7" />
-      <line x1="26.5" y1="22" x2="20.5" y2="18.5" stroke="#818cf8" strokeWidth="1.2" strokeOpacity="0.7" />
-      <line x1="16" y1="28" x2="16" y2="20.5" stroke="#38bdf8" strokeWidth="1.2" strokeOpacity="0.7" />
-      <line x1="5.5" y1="22" x2="11.5" y2="18.5" stroke="#38bdf8" strokeWidth="1.2" strokeOpacity="0.7" />
-      <line x1="5.5" y1="10" x2="11.5" y2="13.5" stroke="#38bdf8" strokeWidth="1.2" strokeOpacity="0.7" />
-      {/* Central Isometric Nexus Cube */}
-      <polygon points="16,11.5 20.5,13.8 16,16 11.5,13.8" fill="url(#mmTop)" stroke="#bae6fd" strokeWidth="0.6" />
-      <polygon points="11.5,13.8 16,16 16,20.5 11.5,18.2" fill="url(#mmLeft)" stroke="#38bdf8" strokeWidth="0.6" />
-      <polygon points="16,16 20.5,13.8 20.5,18.2 16,20.5" fill="url(#mmRight)" stroke="#818cf8" strokeWidth="0.6" />
-      <circle cx="16" cy="16" r="1.5" fill="#ffffff" filter="url(#meshGlow)" />
-      {/* Heterogeneous Agent Constellation Nodes */}
-      <circle className="node node-active" cx="16" cy="4" r="2" fill="#38bdf8" />
-      <circle className="node node-active delay" cx="26.5" cy="10" r="1.8" fill="#818cf8" />
-      <circle className="node" cx="26.5" cy="22" r="1.8" fill="#64748b" />
-      <circle className="node node-success" cx="16" cy="28" r="2" fill="#38bdf8" />
-      <circle className="node node-success" cx="5.5" cy="22" r="1.8" fill="#38bdf8" />
-      <circle className="node" cx="5.5" cy="10" r="1.8" fill="#64748b" />
-    </svg>
-  );
-}
-
 export function LuminousCubeMark({ size = 52, glow = true }: { size?: number; glow?: boolean }) {
   return (
     <div
@@ -81,46 +29,28 @@ export function LuminousCubeMark({ size = 52, glow = true }: { size?: number; gl
       <svg
         width={Math.round(size * 0.58)}
         height={Math.round(size * 0.58)}
-        viewBox="0 0 32 32"
+        viewBox="0 0 200 200"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <linearGradient id="cubeTopGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="belayRopeGrad" gradientUnits="userSpaceOnUse" x1="30" y1="24" x2="134" y2="182">
             <stop offset="0%" stopColor="#7dd3fc" />
-            <stop offset="100%" stopColor="#0284c7" />
+            <stop offset="55%" stopColor="#38bdf8" />
+            <stop offset="100%" stopColor="#6366f1" />
           </linearGradient>
-          <linearGradient id="cubeLeftGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#0369a1" />
-            <stop offset="100%" stopColor="#082f49" />
-          </linearGradient>
-          <linearGradient id="cubeRightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#818cf8" />
-            <stop offset="100%" stopColor="#312e81" />
-          </linearGradient>
-          <filter id="cubeCoreGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="1.8" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
         </defs>
-        {/* Outer subtle guide box */}
-        <polygon points="16,3 28,9.5 28,22.5 16,29 4,22.5 4,9.5" fill="none" stroke="#0284c7" strokeWidth="0.8" strokeOpacity="0.4" strokeDasharray="2 2" />
-        {/* Isometric Cube Faces */}
-        <polygon points="16,6 25,11 16,16 7,11" fill="url(#cubeTopGrad)" stroke="#bae6fd" strokeWidth="0.75" />
-        <polygon points="7,11 16,16 16,26 7,21" fill="url(#cubeLeftGrad)" stroke="#38bdf8" strokeWidth="0.75" />
-        <polygon points="16,16 25,11 25,21 16,26" fill="url(#cubeRightGrad)" stroke="#818cf8" strokeWidth="0.75" />
-        {/* Inner vertex lines */}
-        <line x1="16" y1="6" x2="16" y2="16" stroke="#ffffff" strokeWidth="0.75" strokeOpacity="0.6" />
-        <line x1="7" y1="21" x2="16" y2="16" stroke="#ffffff" strokeWidth="0.75" strokeOpacity="0.5" />
-        <line x1="25" y1="21" x2="16" y2="16" stroke="#ffffff" strokeWidth="0.75" strokeOpacity="0.5" />
-        {/* Luminous Core & Node Vertices */}
-        <circle cx="16" cy="16" r="2" fill="#ffffff" filter="url(#cubeCoreGlow)" />
-        <circle cx="16" cy="6" r="1.3" fill="#38bdf8" />
-        <circle cx="25" cy="11" r="1.3" fill="#818cf8" />
-        <circle cx="7" cy="11" r="1.3" fill="#38bdf8" />
-        <circle cx="16" cy="26" r="1.3" fill="#818cf8" />
-        <circle cx="7" cy="21" r="1.3" fill="#38bdf8" />
-        <circle cx="25" cy="21" r="1.3" fill="#818cf8" />
+        {/* load line: taut, enters behind the friction ring */}
+        <path d="M 30 24 L 104 96" stroke="url(#belayRopeGrad)" strokeWidth="16" strokeLinecap="round" />
+        {/* the ring: the control plane the line runs through */}
+        <rect x="74" y="46" width="54" height="112" rx="27" stroke="#7c8aa0" strokeWidth="16" />
+        {/* brake line: exits in front, curving under control */}
+        <path
+          d="M 104 96 C 132 122 134 152 112 168 C 94 181 66 174 46 182"
+          stroke="url(#belayRopeGrad)"
+          strokeWidth="16"
+          strokeLinecap="round"
+        />
       </svg>
     </div>
   );

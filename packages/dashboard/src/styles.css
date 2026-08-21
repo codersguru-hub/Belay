@@ -1459,7 +1459,6 @@
   background: #0d1117;
 }
 
-.sidebar-context-mark .mesh-mark { width: 23px; height: 23px; }
 .sidebar-context-copy { display: grid; min-width: 0; gap: 2px; }
 .sidebar-context-copy strong { color: #f0f6fc; font-size: 13px; }
 .sidebar-context-copy small { color: #8b949e; font: 10px Consolas, monospace; }

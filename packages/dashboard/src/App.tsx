@@ -4,7 +4,6 @@ import {
   CockpitView,
   ConnectModal,
   LuminousCubeMark,
-  MeshMark,
   NAVIGATION,
   StatusPill,
   SystemPostureBadge
