@@ -23,6 +23,8 @@ try {
   if (initial.isError) {
     throw new Error("get_stage_context failed");
   }
+  const advertisedTools = (await codex.listTools()).tools.length;
+  const advertisedResources = (await codex.listResources()).resources.length;
   const manifest = await codex.readResource({ uri: "project://manifest" });
   const manifestText = manifest.contents[0]?.text;
   if (typeof manifestText !== "string" || Buffer.byteLength(manifestText, "utf8") > 3_200) {
@@ -90,7 +92,7 @@ try {
   }
 
   process.stdout.write(
-    `${JSON.stringify({ endpoint, tools: 6, resources: 1, manifestBytes: Buffer.byteLength(manifestText, "utf8"), overlapWinners: 1, conflicts: 1, heartbeat: "ok", completion: "ok" })}\n`
+    `${JSON.stringify({ endpoint, tools: advertisedTools, resources: advertisedResources, manifestBytes: Buffer.byteLength(manifestText, "utf8"), overlapWinners: 1, conflicts: 1, heartbeat: "ok", completion: "ok" })}\n`
   );
 } finally {
   await Promise.allSettled([codex.close(), claude.close()]);

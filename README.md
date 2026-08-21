@@ -1,4 +1,4 @@
-<img src="docs/assets/belay-logo.svg" alt="Belay" width="360">
+<img src="docs/assets/belay-logo-v2.svg" alt="Belay" width="360">
 
 > The local control plane for multi-agent coding fleets: shared state, token-efficient indexing, zero-leak execution, and human-approved mutation.
 

@@ -464,8 +464,8 @@ export function StudioView({ snapshot, onDecision, decisionPending, onSwitchToCo
                 </svg>
               </span>
               <div className="workspace-details">
-                <strong className="proj-name">{snapshot.project.name || "mql-generator"}</strong>
-                <small className="proj-path muted">{snapshot.project.root || "D:\\Projects\\mql-generator"}</small>
+                <strong className="proj-name">{snapshot.project.name || "workspace"}</strong>
+                <small className="proj-path muted">{snapshot.project.root || ""}</small>
               </div>
             </div>
           </div>
@@ -611,7 +611,7 @@ export function StudioView({ snapshot, onDecision, decisionPending, onSwitchToCo
               <section className="workbench-welcome" aria-label="Workbench Overview">
                 <div className="workbench-hero-center">
                   <LuminousCubeMark size={68} glow={true} />
-                  <h1 className="workbench-title">{snapshot.project.name || "mql-generator"} Workbench</h1>
+                  <h1 className="workbench-title">{snapshot.project.name || "workspace"} Workbench</h1>
                   <p className="workbench-subtitle">
                     Direct multi-agent dispatch to <strong>Claude Code</strong> and <strong>OpenAI Codex</strong>
                   </p>

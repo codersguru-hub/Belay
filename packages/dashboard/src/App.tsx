@@ -93,7 +93,7 @@ export function App({ initialMode = "cockpit" }: { initialMode?: "cockpit" | "st
             <LuminousCubeMark size={36} glow={true} />
             <div>
               <h1>Belay</h1>
-              <code>{snapshot.project.name || "mql-generator"}</code>
+              <code>{snapshot.project.name || "workspace"}</code>
             </div>
           </div>
 

@@ -960,8 +960,8 @@ function Sidebar({
                 </svg>
               </span>
               <div className="workspace-details">
-                <strong className="proj-name">{snapshot.project.name || "mql-generator"}</strong>
-                <small className="proj-path muted">{snapshot.project.root || "D:\\Projects\\mql-generator"}</small>
+                <strong className="proj-name">{snapshot.project.name || "workspace"}</strong>
+                <small className="proj-path muted">{snapshot.project.root || ""}</small>
               </div>
             </div>
           </div>
