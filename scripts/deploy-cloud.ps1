@@ -2,7 +2,7 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$ProjectId,
   [string]$Region = "us-central1",
-  [string]$ServiceName = "agentmesh-intelligence",
+  [string]$ServiceName = "belay-intelligence",
   [string]$Model = "gemini-3.6-flash",
   [string]$Gcloud = "gcloud",
   [string]$GcloudConfig = "",
@@ -11,9 +11,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$runtimeAccountName = "agentmesh-intelligence"
+$runtimeAccountName = "belay-intelligence"
 $runtimeAccount = "$runtimeAccountName@$ProjectId.iam.gserviceaccount.com"
-$builderAccountName = "agentmesh-builder"
+$builderAccountName = "belay-builder"
 $builderAccount = "$builderAccountName@$ProjectId.iam.gserviceaccount.com"
 
 if ($GcloudConfig) {
@@ -64,7 +64,7 @@ function Remove-CloudBuildContext {
 
 function New-CloudBuildContext {
   $temporaryRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
-  $contextPath = Join-Path $temporaryRoot ("agentmesh-cloud-build-" + [guid]::NewGuid().ToString("N"))
+  $contextPath = Join-Path $temporaryRoot ("belay-cloud-build-" + [guid]::NewGuid().ToString("N"))
   $resolvedContext = [System.IO.Path]::GetFullPath($contextPath)
   if (-not $resolvedContext.StartsWith($temporaryRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "The generated cloud build context escaped the operating-system temporary directory."
@@ -170,12 +170,12 @@ try {
 
   $existingRuntimeAccount = Get-GcloudValue -Command @("iam", "service-accounts", "list", "--filter=email=$runtimeAccount", "--format=value(email)")
   if (-not $existingRuntimeAccount) {
-    Invoke-Gcloud -Command @("iam", "service-accounts", "create", $runtimeAccountName, "--display-name=AgentMesh Cloud Intelligence")
+    Invoke-Gcloud -Command @("iam", "service-accounts", "create", $runtimeAccountName, "--display-name=Belay Cloud Intelligence")
   }
 
   $existingBuilderAccount = Get-GcloudValue -Command @("iam", "service-accounts", "list", "--filter=email=$builderAccount", "--format=value(email)")
   if (-not $existingBuilderAccount) {
-    Invoke-Gcloud -Command @("iam", "service-accounts", "create", $builderAccountName, "--display-name=AgentMesh Cloud Builder")
+    Invoke-Gcloud -Command @("iam", "service-accounts", "create", $builderAccountName, "--display-name=Belay Cloud Builder")
   }
 
   Invoke-Gcloud -Command @("projects", "add-iam-policy-binding", $ProjectId, "--member=serviceAccount:$runtimeAccount", "--role=roles/aiplatform.user", "--condition=None")
@@ -189,7 +189,7 @@ try {
     "--service-account=$runtimeAccount",
     "--build-service-account=projects/$ProjectId/serviceAccounts/$builderAccount",
     "--no-allow-unauthenticated",
-    "--set-env-vars=AGENTMESH_GEMINI_MODEL=$Model,GCLOUD_LOCATION=global",
+    "--set-env-vars=BELAY_GEMINI_MODEL=$Model,GCLOUD_LOCATION=global",
     "--quiet"
   )
 
@@ -200,7 +200,7 @@ try {
   $payload = @{
     version = 1
     kind = "manifest_summary"
-    projectAlias = "agentmesh-demo"
+    projectAlias = "belay-demo"
     manifest = @{
       frameworks = @("typescript", "genkit")
       scripts = @("build", "test")
@@ -212,6 +212,25 @@ try {
 
   $response = Invoke-RestMethod -Method Post -Uri "$serviceUrl/v1/summarize" -Headers @{ Authorization = "Bearer $identityToken" } -ContentType "application/json" -Body $payload
 
+  $fleetPayload = @{
+    version = 1
+    kind = "fleet_task_decomposition"
+    projectAlias = "belay-demo"
+    goal = "Refactor authentication to RS256 and add rate limiting before agents execute."
+    agents = @("claude-code", "codex", "antigravity")
+    manifest = @{
+      frameworks = @("typescript", "genkit")
+      candidatePaths = @(
+        @{ path = "src/auth-service.ts"; symbolKinds = @("class", "function") },
+        @{ path = "src/rate-limit.ts"; symbolKinds = @("function") },
+        @{ path = "tests/auth.test.ts"; symbolKinds = @("function") }
+      )
+      git = @{ branch = "main"; dirtyFileCount = 1 }
+    }
+  } | ConvertTo-Json -Depth 8 -Compress
+
+  $fleetResponse = Invoke-RestMethod -Method Post -Uri "$serviceUrl/v1/decompose-fleet-task" -Headers @{ Authorization = "Bearer $identityToken" } -ContentType "application/json" -Body $fleetPayload
+
   [pscustomobject]@{
     serviceUrl = $serviceUrl
     requestId = $response.requestId
@@ -219,6 +238,11 @@ try {
     riskLevel = $response.riskLevel
     generatedAt = $response.generatedAt
     summary = $response.summary
+    fleetRequestId = $fleetResponse.requestId
+    fleetPlanId = $fleetResponse.planId
+    fleetModel = $fleetResponse.model
+    fleetTaskCount = $fleetResponse.tasks.Count
+    fleetGoalSummary = $fleetResponse.goalSummary
   } | ConvertTo-Json -Depth 4
 } finally {
   Remove-CloudBuildContext -ContextPath $cloudBuildContext

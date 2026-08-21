@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { canonicalJson } from "../indexer/canonical-json.js";
-import type { KnowledgeApprovalPreview } from "@agentmesh/contracts";
+import type { KnowledgeApprovalPreview } from "@belay/contracts";
 
 export interface CanonicalApprovalAction {
   executor: "local-process";
@@ -11,6 +11,10 @@ export interface CanonicalApprovalAction {
   envProfile: string | null;
   policyVersion: string;
   expiresAt: string;
+  // Omitted entirely (not just undefined) for commands with no stdin payload, so existing
+  // digests are unaffected. Present as a hash — never the raw prompt — so a decision binds to
+  // the exact stdin content without inflating or leaking it through the digest itself.
+  stdinDigest?: string;
 }
 
 export function actionDigest(action: CanonicalApprovalAction): string {

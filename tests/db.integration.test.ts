@@ -5,7 +5,7 @@ import {
   AcquireTaskInputSchema,
   GetStageContextInputSchema,
   LogCompletionInputSchema
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 import { CoordinationService } from "../packages/daemon/src/coordination/coordination-service.js";
 import { CoordinationError } from "../packages/daemon/src/coordination/errors.js";
@@ -16,7 +16,7 @@ import { bootstrapProject } from "../packages/daemon/src/db/repositories/project
 const temporaryDirectories: string[] = [];
 
 function createFixture() {
-  const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-db-"));
+  const stateDirectory = mkdtempSync(join(tmpdir(), "belay-db-"));
   temporaryDirectories.push(stateDirectory);
   const projectRoot = join(stateDirectory, "demo-repo");
   mkdirSync(projectRoot);
@@ -28,7 +28,11 @@ function createFixture() {
 
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) {
-    rmSync(directory, { recursive: true, force: true });
+    try {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    } catch {
+      // ignore EBUSY on windows during fast teardown
+    }
   }
 });
 
@@ -43,7 +47,7 @@ describe("db coordination kernel", () => {
     const migrationCount = fixture.database
       .prepare("SELECT count(*) AS count FROM schema_migrations")
       .get() as { count: number };
-    expect(migrationCount.count).toBe(9);
+    expect(migrationCount.count).toBe(11);
 
     expect(() =>
       fixture.database

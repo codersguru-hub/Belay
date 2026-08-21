@@ -1,5 +1,5 @@
 {
-  "name": "@agentmesh/cloud-service",
+  "name": "@belay/cloud-service",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@agentmesh/contracts": "0.1.0",
+    "@belay/contracts": "0.1.0",
     "@genkit-ai/google-genai": "^1.28.0",
     "genkit": "^1.28.0"
   }

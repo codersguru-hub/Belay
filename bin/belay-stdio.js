@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
 
-const mcpUrl = process.env.AGENTMESH_MCP_URL ?? "http://127.0.0.1:3420/mcp";
+const mcpUrl = process.env.BELAY_MCP_URL ?? "http://127.0.0.1:3420/mcp";
 let sessionId = null;
 
 const transport = new StdioServerTransport();
@@ -69,7 +69,7 @@ transport.onmessage = async (message) => {
           jsonrpc: "2.0",
           error: {
             code: -32000,
-            message: `AgentMesh HTTP ${response.status}: ${errText}`
+            message: `Belay HTTP ${response.status}: ${errText}`
           },
           id: message.id ?? null
         };
@@ -81,7 +81,7 @@ transport.onmessage = async (message) => {
       jsonrpc: "2.0",
       error: {
         code: -32603,
-        message: `AgentMesh bridge error: ${err instanceof Error ? err.message : String(err)}`
+        message: `Belay bridge error: ${err instanceof Error ? err.message : String(err)}`
       },
       id: message.id ?? null
     });

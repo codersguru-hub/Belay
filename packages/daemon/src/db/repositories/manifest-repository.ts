@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import type { ManifestSnapshot, ProjectManifestV1 } from "@agentmesh/contracts";
+import type { ManifestSnapshot, ProjectManifestV1 } from "@belay/contracts";
 
 interface ManifestSnapshotRow {
   project_id: string;

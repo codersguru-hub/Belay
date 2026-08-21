@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
+import { TaskIdSchema } from "@belay/contracts";
 import type {
   AddChecklistItemInput,
   AddChecklistItemResult,
@@ -8,6 +9,7 @@ import type {
   BlockTaskInput,
   BlockTaskResult,
   CompletionResult,
+  FleetTaskPlanResponse,
   GetStageContextInput,
   HeartbeatTaskInput,
   HeartbeatTaskResult,
@@ -19,7 +21,7 @@ import type {
   ReportTaskProgressInput,
   StageContextResult,
   TaskProgressResult
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import {
   canonicalizeProjectRoot,
   findProjectByRoot,
@@ -791,6 +793,35 @@ export class CoordinationService {
     return acquire.immediate();
   }
 
+  stageFleetTaskPlan(input: {
+    projectRoot: string;
+    plan: FleetTaskPlanResponse;
+    leaseSeconds: number;
+  }): {
+    ok: true;
+    planId: string;
+    tasks: AcquireTaskResult[];
+  } {
+    const stage = this.database.transaction(() =>
+      input.plan.tasks.map((task) =>
+        this.acquireTask({
+          projectRoot: input.projectRoot,
+          taskId: TaskIdSchema.parse(`gemini:${input.plan.planId}:${task.taskId}`),
+          agentName: task.assignedAgent,
+          title: task.title,
+          filePaths: task.leasePaths,
+          leaseSeconds: input.leaseSeconds,
+          idempotencyKey: `fleet:${input.plan.planId}:${task.taskId}`
+        })
+      )
+    );
+    return {
+      ok: true,
+      planId: input.plan.planId,
+      tasks: stage.immediate()
+    };
+  }
+
   heartbeatTask(input: HeartbeatTaskInput): HeartbeatTaskResult {
     const correlationId = this.createCorrelationId();
     const project = this.resolveProject(input.projectRoot, correlationId);
@@ -1269,7 +1300,7 @@ export class CoordinationService {
     if (!project) {
       throw new CoordinationError({
         code: "PROJECT_NOT_FOUND",
-        message: "The project has not been initialized in AgentMesh.",
+        message: "The project has not been initialized in Belay.",
         correlationId
       });
     }
@@ -1280,7 +1311,7 @@ export class CoordinationService {
     if (project.workspace_id) return project.workspace_id;
     throw new CoordinationError({
       code: "INTERNAL_ERROR",
-      message: "The project is not attached to an AgentMesh workspace.",
+      message: "The project is not attached to an Belay workspace.",
       correlationId
     });
   }

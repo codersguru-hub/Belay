@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import type {
+  FleetTaskDecompositionRequestV1,
+  FleetTaskPlanResponse,
   CloudLockConflict,
   CloudSummaryRequestV1,
   CloudSummaryResponse,
   ProjectManifestV1
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import type { ManifestService } from "../indexer/manifest-service.js";
 import type { VaultService } from "../vault/vault-service.js";
 import {
@@ -56,6 +58,7 @@ export class CloudIntelligenceUnavailableError extends Error {
 export class CloudIntelligenceService {
   private lastResult: { model: string; generatedAt: string } | undefined;
   private lastFailureAt: string | undefined;
+  private readonly fleetPlans = new Map<string, FleetTaskPlanResponse>();
 
   constructor(
     private readonly database: Database.Database,
@@ -104,12 +107,16 @@ export class CloudIntelligenceService {
     return this.manifests.getLatest(this.projectRoot)?.projectId;
   }
 
+  localProjectRoot(): string {
+    return this.projectRoot;
+  }
+
   async summarizeManifest(): Promise<CloudSummaryResponse> {
     if (!this.adapter) throw new CloudIntelligenceUnavailableError("NOT_CONFIGURED");
     const snapshot = this.manifests.getLatest(this.projectRoot);
     if (!snapshot) throw new CloudIntelligenceUnavailableError("NO_MANIFEST");
     const payload = manifestPayload(
-      safeAlias(snapshot.manifest.project.name, "agentmesh-project"),
+      safeAlias(snapshot.manifest.project.name, "belay-project"),
       snapshot.manifest
     );
     return this.dispatch(payload, snapshot.projectId);
@@ -128,12 +135,60 @@ export class CloudIntelligenceService {
       version: 1,
       kind: "lock_conflict_advice",
       projectAlias: safeAlias(
-        snapshot?.manifest.project.name ?? "agentmesh-project",
-        "agentmesh-project"
+        snapshot?.manifest.project.name ?? "belay-project",
+        "belay-project"
       ),
       conflict
     };
     return this.dispatch(payload, snapshot?.projectId);
+  }
+
+  /**
+   * Uses Gemini as the fleet's pre-execution planner. Only a user-authored high-level
+   * goal plus the bounded structural manifest crosses the egress guard; source bodies,
+   * diffs, and secrets remain local. The returned lease allocation is advisory until
+   * each agent acquires it through the existing SQLite-WAL coordination authority.
+   */
+  async decomposeFleetTask(goal: string): Promise<FleetTaskPlanResponse> {
+    if (!this.adapter?.decomposeFleetTask) {
+      throw new CloudIntelligenceUnavailableError("NOT_CONFIGURED");
+    }
+    const snapshot = this.manifests.getLatest(this.projectRoot);
+    if (!snapshot) throw new CloudIntelligenceUnavailableError("NO_MANIFEST");
+    const candidatePaths = snapshot.manifest.topology.slice(0, 400).map((entry) => ({
+      path: entry.path,
+      symbolKinds: [...new Set(entry.exports.map((item) => item.kind))].sort()
+    }));
+    if (candidatePaths.length === 0) {
+      throw new CloudIntelligenceUnavailableError("NO_MANIFEST");
+    }
+    const payload: FleetTaskDecompositionRequestV1 = {
+      version: 1,
+      kind: "fleet_task_decomposition",
+      projectAlias: safeAlias(snapshot.manifest.project.name, "belay-project"),
+      goal,
+      agents: ["claude-code", "codex", "antigravity"],
+      manifest: {
+        frameworks: snapshot.manifest.frameworks,
+        candidatePaths,
+        git: {
+          branch: snapshot.manifest.git.branch ?? "detached",
+          dirtyFileCount: snapshot.manifest.git.dirtyFileCount
+        }
+      }
+    };
+    const plan = await this.dispatchFleetTask(payload, snapshot.projectId);
+    this.fleetPlans.set(plan.planId, plan);
+    while (this.fleetPlans.size > 8) {
+      const oldestPlanId = this.fleetPlans.keys().next().value as string | undefined;
+      if (!oldestPlanId) break;
+      this.fleetPlans.delete(oldestPlanId);
+    }
+    return plan;
+  }
+
+  fleetTaskPlan(planId: string): FleetTaskPlanResponse | undefined {
+    return this.fleetPlans.get(planId);
   }
 
   private async dispatch(
@@ -142,6 +197,9 @@ export class CloudIntelligenceService {
   ): Promise<CloudSummaryResponse> {
     if (!this.adapter) throw new CloudIntelligenceUnavailableError("NOT_CONFIGURED");
     const allowed = await this.inspect(payload);
+    if (allowed.payload.kind === "fleet_task_decomposition") {
+      throw new CloudIntelligenceUnavailableError("CLOUD_UNAVAILABLE");
+    }
     const requestId = this.options.createRequestId?.() ?? randomUUID();
     const createdAt = (this.options.now?.() ?? new Date()).toISOString();
     if (projectId) {
@@ -183,7 +241,67 @@ export class CloudIntelligenceService {
     }
   }
 
-  private async inspect(payload: CloudSummaryRequestV1): Promise<AllowedEgress> {
+  private async dispatchFleetTask(
+    payload: FleetTaskDecompositionRequestV1,
+    projectId: string
+  ): Promise<FleetTaskPlanResponse> {
+    if (!this.adapter?.decomposeFleetTask) {
+      throw new CloudIntelligenceUnavailableError("NOT_CONFIGURED");
+    }
+    const allowed = await this.inspect(payload);
+    if (allowed.payload.kind !== "fleet_task_decomposition") {
+      throw new CloudIntelligenceUnavailableError("CLOUD_UNAVAILABLE");
+    }
+    const requestId = this.options.createRequestId?.() ?? randomUUID();
+    const createdAt = (this.options.now?.() ?? new Date()).toISOString();
+    insertCloudRequest(this.database, { id: requestId, projectId, allowed, createdAt });
+    try {
+      const result = await this.adapter.decomposeFleetTask(allowed.payload, {
+        requestId,
+        timeoutMilliseconds: this.options.timeoutMilliseconds ?? DEFAULT_TIMEOUT_MILLISECONDS
+      });
+      if (result.requestId !== requestId) {
+        throw new Error("Cloud response correlation mismatch.");
+      }
+      const allowedAgents = new Set(allowed.payload.agents);
+      const allowedPaths = new Set(
+        allowed.payload.manifest.candidatePaths.map((entry) => entry.path)
+      );
+      for (const task of result.tasks) {
+        if (!allowedAgents.has(task.assignedAgent)) {
+          throw new Error("Cloud plan selected an unavailable agent.");
+        }
+        if (task.leasePaths.some((path) => !allowedPaths.has(path))) {
+          throw new Error("Cloud plan selected a path outside the manifest.");
+        }
+      }
+      completeCloudRequest(this.database, {
+        id: requestId,
+        status: "succeeded",
+        completedAt: (this.options.now?.() ?? new Date()).toISOString(),
+        provider: this.adapter.provider,
+        model: result.model
+      });
+      this.lastResult = { model: result.model, generatedAt: result.generatedAt };
+      this.lastFailureAt = undefined;
+      return result;
+    } catch {
+      const completedAt = (this.options.now?.() ?? new Date()).toISOString();
+      completeCloudRequest(this.database, {
+        id: requestId,
+        status: "failed",
+        completedAt,
+        provider: this.adapter.provider,
+        errorCode: "CLOUD_UNAVAILABLE"
+      });
+      this.lastFailureAt = completedAt;
+      throw new CloudIntelligenceUnavailableError("CLOUD_UNAVAILABLE");
+    }
+  }
+
+  private async inspect(
+    payload: CloudSummaryRequestV1 | FleetTaskDecompositionRequestV1
+  ): Promise<AllowedEgress> {
     const vaultStatus = this.vault.status();
     if (vaultStatus.state !== "unlocked") return new EgressGuard().inspect(payload);
     return this.vault.withUnlockedEnvironment(vaultStatus.variableNames, (environment) =>

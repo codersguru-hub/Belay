@@ -1,4 +1,4 @@
-import { GetStageContextInputSchema } from "@agentmesh/contracts";
+import { GetStageContextInputSchema } from "@belay/contracts";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { CoordinationService } from "../../coordination/coordination-service.js";
 import { failedToolResult, successfulToolResult } from "../tool-result.js";

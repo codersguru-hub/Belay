@@ -1,6 +1,6 @@
 # Title
 
-AgentMesh
+Belay
 
 ## One-line Summary
 
@@ -14,37 +14,41 @@ Existing orchestrators usually assume they own every agent. That does not fit a 
 
 ## Solution
 
-AgentMesh is a local-first control plane exposed through MCP. It gives heterogeneous coding agents one bounded view of approved project knowledge, planned work, task ownership, file leases, progress, blockers, and recent activity.
+Belay is a local-first control plane exposed through MCP. It gives heterogeneous coding agents one bounded view of approved project knowledge, planned work, task ownership, file leases, progress, blockers, and recent activity.
 
 Agents can propose durable project or workspace facts, but those facts remain invisible until a human approves the exact canonical payload digest. Risky commands use the same approval machinery. Secrets stay behind a local encrypted vault and are injected only into registered child processes; known raw and encoded forms are scrubbed from streamed output.
 
-A private Genkit service on Cloud Run uses Gemini 3.6 Flash to explain allowlisted structural metadata. Raw source, secret-shaped content, connection strings, unknown fields, and known secret encodings are rejected locally before any network call. Gemini is an advisory intelligence plane and cannot authorize execution or mutate local state.
+A private Genkit TypeScript service on Google Cloud Run makes Gemini 3.6 Flash the Cloud Arbiter and Fleet Intelligence Engine. Before execution, Gemini decomposes a Workbench goal into structured tasks for Claude Code, Codex, and Antigravity, assigns required repository-relative lease paths, orders dependencies, and labels risk. It also adjudicates live lock conflicts and explains sanitized audit risk. Raw source, secret-shaped content, connection strings, unknown fields, and known secret encodings are rejected locally before any network call. Gemini cannot authorize execution or mutate local state; SQLite-WAL remains the enforcement authority.
 
 ## Why This Matters
 
-Multi-agent coding becomes much more useful when agents can operate concurrently, but concurrency without shared state creates expensive rescans, duplicated work, contradictory assumptions, and unsafe mutation paths. AgentMesh turns those independent tools into a governable fleet while preserving their autonomy.
+Multi-agent coding becomes much more useful when agents can operate concurrently, but concurrency without shared state creates expensive rescans, duplicated work, contradictory assumptions, and unsafe mutation paths. Belay turns those independent tools into a governable fleet while preserving their autonomy.
 
 For a solo developer or lead architect, the result is practical: agents see the same approved facts, avoid files another agent owns, continue from durable checklist state, use credentials without receiving them, and leave a correlated audit trail. The product targets the Fortified Enterprise Fleet category as a local Memory Bank, Agent Gateway, security boundary, and observability plane for coding agents.
 
 ## How We Used AI
 
-- Codex, Claude Code, Antigravity, and other MCP-compatible agents are the independent operators coordinated by AgentMesh.
-- Gemini 3.6 Flash runs through Genkit on a private Cloud Run service and produces structured repository summaries, risk explanations, and **live conflict adjudication** from schema-validated structural metadata.
-- **Gemini is reachable from the agent workflow, not just the dashboard.** The `explain_lock_conflict` MCP tool is called by an agent that just lost a file-lock race. AgentMesh sends only agent aliases, repository-relative paths, and the exported symbol kinds of each contended file; Gemini returns which work actually overlaps and a concrete non-conflicting split. This is the one place where a language model is genuinely the right tool: the deterministic engine knows *that* two file sets intersect, but only a model can read the topology and explain *what* the overlap means and what to do instead.
+- Codex, Claude Code, Antigravity, and other MCP-compatible agents are the independent operators coordinated by Belay.
+- Gemini 3.6 Flash runs through Genkit TypeScript on a private Google Cloud Run service and produces **pre-execution fleet decomposition**, structured repository summaries, risk explanations, and live conflict adjudication from schema-validated structural metadata.
+- **Gemini is the chief orchestration intelligence.** Studio’s `Plan with Gemini` path sends a high-level goal plus bounded AST topology to `POST /v1/decompose-fleet-task`. Gemini assigns Claude Code, Codex, and Antigravity to concrete subtasks, lease paths, dependencies, acceptance criteria, and risk levels. The local daemon rejects invented paths/agents and still grants every real lease through SQLite-WAL.
+- **Gemini is reachable from the agent workflow, not just the dashboard.** Before execution it turns a high-level goal into a structured fleet/lease plan; after a collision, the `explain_lock_conflict` MCP tool asks it to explain the real overlap and a non-conflicting split. These are the semantic decisions the deterministic engine should not guess: SQLite knows whether paths intersect, while Gemini interprets topology and proposes how the fleet should divide the work.
 - The local egress guard enforces an exact allowlist and blocks raw source, private-key markers, connection strings, bearer tokens, known secrets and encodings, unknown keys, and oversized payloads before network activity.
 - Generative output is labeled with its model, request ID, risk level, and generation time. Cloud failure leaves local coordination, memory, approvals, vault policy, and execution available.
 
 
 ## Key Features
 
+- **Dual-mode visual portal (🛡️ Cockpit & ⚡ Studio):**
+  - **🛡️ Cockpit:** Multi-agent fleet governance board for active tasks, file lock topologies, checklist boards, AES-256 vault posture, audit log, and Gemini conflict adjudication.
+  - **⚡ Studio:** Interactive 3-column tablet & remote workbench providing direct prompt dispatching to Antigravity (`agy`), OpenAI Codex, and Claude Code with real-time Git diff inspection and cryptographic approval binding (`stdinDigest`).
 - **Approved semantic memory:** durable project- and workspace-scoped facts with priority, provenance, explicit supersession, collision detection, and a separately bounded pinned context block.
 - **Shared workflow state:** auditable checklists with dependencies, owners, progress, blockers, acceptance criteria, and verification evidence.
 - **Atomic file ownership:** SQLite WAL transactions provide task leases and repository-relative file locks with exactly one winner for overlapping concurrent requests.
 - **Deterministic compact context:** `project://manifest` provides byte-identical structural context with stable hashing, exclusion counters, token estimates, and a strict 3,200-byte ceiling.
 - **Secret-safe execution:** AES-256-GCM encrypts environment payloads while `age` wraps the random DEK to a supported local SSH identity. Registered commands run with `shell: false`, minimal environment injection, time/output bounds, and streaming secret redaction.
 - **Human-governed mutation:** command and knowledge proposals are bound to canonical SHA-256 digests, expire, accept one authenticated decision, reject replay or mutation, and fail closed after ambiguous restarts.
-- **Quiet local cockpit:** React dashboard for agents, checklist state, approved knowledge, active tasks, locked files, audit events, vault posture, manifest metrics, and pending approvals.
 - **Privacy-filtered Gemini:** private-IAM Cloud Run service using Genkit and Gemini 3.6 Flash, with local and server-side schema validation and no callback into the local executor.
+- **Gemini fleet task decomposition:** a structured Genkit flow converts a high-level Workbench goal into an agent/lease dependency plan before any agent prompt runs. Cloud output is double-validated and cannot bypass the local coordination authority.
 - **Gemini conflict adjudication:** the `explain_lock_conflict` MCP tool turns a bare lock collision into an explanation of the real overlap plus a non-conflicting split, using only aliases, relative paths, and symbol kinds. It is strictly advisory — it cannot acquire, release, or override a lease — and it always returns the deterministic local split first, so an unconfigured, policy-blocked, or unreachable cloud degrades the answer instead of failing the call.
 - **Reproducible proof:** integrated hero flow, no-leak scans, architecture assets, Cloud Run evidence, and documented clean-checkout commands.
 
@@ -52,9 +56,9 @@ For a solo developer or lead architect, the result is practical: agents see the 
 
 Agent clients are treated as untrusted callers. They connect over loopback-only MCP Streamable HTTP to a local TypeScript daemon. The daemon owns canonical paths, SQLite WAL state, project/workspace knowledge, workflow checklists, file leases, indexing, vault state, command policy, approvals, audit events, and cloud egress validation.
 
-The browser cockpit is privileged but secret-free. It receives sanitized local REST/WebSocket projections and a process-local HttpOnly decision token. The cloud intelligence service is separately deployed on private Cloud Run with a dedicated runtime identity. It receives only allowlisted structural metadata, invokes Gemini through Genkit, and has no route back to the repository, SQLite database, vault, or executor.
+The browser cockpit & studio workbench are privileged but secret-free. They receive sanitized local REST/WebSocket projections and a process-local HttpOnly decision token. The cloud intelligence service is separately deployed on private Cloud Run with a dedicated runtime identity. It receives only allowlisted structural metadata, invokes Gemini through Genkit, and has no route back to the repository, SQLite database, vault, or executor.
 
-Architecture upload: `docs/assets/agentmesh-architecture.png` (1440×900 PNG, also available as editable SVG and Mermaid source).
+Architecture upload: `docs/assets/belay-architecture.png` (1440×900 PNG, also available as editable SVG and Mermaid source).
 
 ### Technologies Used
 
@@ -62,14 +66,14 @@ TypeScript, Node.js, MCP Streamable HTTP, SQLite WAL, Zod, React, Vite, WebSocke
 
 ### Other Data Sources
 
-AgentMesh reads only the selected local repository's allowlisted structural metadata, Git branch/dirty-path metadata, agent-authored checklist and knowledge records, and sanitized local audit events. It does not use external datasets. The cloud service receives a smaller schema-validated projection and never receives raw repository bodies, vault values, private keys, or connection strings.
+Belay reads only the selected local repository's allowlisted structural metadata, Git branch/dirty-path metadata, agent-authored checklist and knowledge records, and sanitized local audit events. It does not use external datasets. The cloud service receives a smaller schema-validated projection and never receives raw repository bodies, vault values, private keys, or connection strings.
 
 ### Findings and Learnings
 
 - Persistence alone is not shared memory: episodic activity, durable approved knowledge, and planned workflow state need different lifecycles and context budgets.
 - Shared memory needs governance. Letting an agent silently write “truth” can amplify one mistaken conclusion across the fleet, so semantic facts use provenance, digest approval, and supersession rather than deletion.
 - Exactly-once mutation needs explicit pending, approved, executing, terminal, and indeterminate states; a button and a boolean are not sufficient.
-- Deployment packaging is part of the privacy boundary. A narrow Docker image is not enough if the source uploader sends a broader context first, which led us to generate and verify an exact 19-file Cloud Run build context.
+- Deployment packaging is part of the privacy boundary. A narrow Docker image is not enough if the source uploader sends a broader context first, which led us to generate and verify an exact 21-file Cloud Run build context.
 - Negative evidence is more useful than a security adjective. The project tests tampering, replay, encoded secret variants, stream boundaries, restart ambiguity, and forbidden cloud payloads.
 
 ## Testing Instructions
@@ -77,8 +81,8 @@ AgentMesh reads only the selected local repository's allowlisted structural meta
 Requirements: Node.js 22+, npm 10+, and Git on `PATH`. The vault and live cloud smoke paths are optional for basic local verification.
 
 ```bash
-git clone https://github.com/codersguru-hub/AgentMesh.git
-cd AgentMesh
+git clone https://github.com/codersguru-hub/Belay.git
+cd Belay
 npm ci
 npm run build
 npm test
@@ -88,9 +92,9 @@ npm run verify:no-leaks
 
 Expected verified baseline:
 
-- Full regression: **46 tests across 11 files.** On a clean checkout without the `age` CLI this
-  reports **45 passed, 1 skipped** — the real-`age` Ed25519 round-trip gates itself on `age` and
-  `ssh-keygen` being present rather than silently faking the adapter. With `age` installed all 46
+- Full regression: **54 tests across 12 files.** On a clean checkout without the `age` CLI this
+  reports **53 passed, 1 skipped** — the real-`age` Ed25519 round-trip gates itself on `age` and
+  `ssh-keygen` being present rather than silently faking the adapter. With `age` installed all 54
   run. This is the only conditional test in the suite.
 - Hero flow: deterministic manifest, two MCP contenders with exactly one lock winner, durable restart recovery, secret-backed child execution with redacted output, exactly-once approval with replay rejection, one allowed cloud request, and zero forbidden cloud calls.
 - No-leak suite: **19 focused tests** across executor security, cloud egress, and the integrated hero flow.
@@ -118,11 +122,11 @@ To run the local cockpit:
 
 ```bash
 npm run start
-# equivalently, from inside the cloned repository: npx agentmesh start --open
+# equivalently, from inside the cloned repository: npx belay start --open
 ```
 
-(`agentmesh` is the repository's own bin entry; AgentMesh is not published to the public npm
-registry, so run it from inside the clone rather than as a bare `npx agentmesh` elsewhere.)
+(`belay` is the repository's own bin entry; Belay is not published to the public npm
+registry, so run it from inside the clone rather than as a bare `npx belay` elsewhere.)
 
 Then connect MCP clients to `http://127.0.0.1:3420/mcp` (or use 1-click config snippets inside the Cockpit UI). The cockpit is served at `http://127.0.0.1:3420/`.
 
@@ -132,7 +136,7 @@ Then connect MCP clients to `http://127.0.0.1:3420/mcp` (or use 1-click config s
 
 ## Public Repository Link
 
-https://github.com/codersguru-hub/AgentMesh
+https://github.com/codersguru-hub/Belay
 
 **TODO:** Push the final tested revision, verify the public tree contains no sensitive state, and record the final tag/commit SHA here.
 
@@ -154,8 +158,8 @@ The recording should be live and readable at 1080p, show visible Google Cloud pr
 
 ## Screenshot Shot List
 
-1. `docs/screenshots/agentmesh-cockpit-approval.png` — pending protected-command approval with requester, target, masked environment names, digest, and policy reason.
-2. `docs/screenshots/agentmesh-cockpit-fail-closed.png` — ambiguous execution becomes `indeterminate` and does not silently retry.
+1. `docs/screenshots/belay-cockpit-approval.png` — pending protected-command approval with requester, target, masked environment names, digest, and policy reason.
+2. `docs/screenshots/belay-cockpit-fail-closed.png` — ambiguous execution becomes `indeterminate` and does not silently retry.
 3. **TODO:** capture the approved knowledge panel beside a pending knowledge proposal, showing project/workspace scope and provenance without repository-sensitive content.
 4. **TODO:** capture exactly-one-winner file contention with owner, path lease, and correlation ID visible.
 5. **TODO:** capture a redaction-reviewed Cloud Run ready revision and Gemini smoke result without account identifiers or credentials.
@@ -179,7 +183,7 @@ The recording should be live and readable at 1080p, show visible Google Cloud pr
 - The vault's `age` adapter supports readable RSA/Ed25519 SSH identity files, not `ssh-agent` or hardware-backed keys. On Windows, vault-file confidentiality relies on the containing user directory ACL.
 - JavaScript cannot guarantee compiler-level memory zeroization; buffers are short-lived and overwritten on a best-effort basis.
 - Gemini is advisory and cannot authorize or mutate local state. Cloud unavailability leaves local features operating in degraded mode.
-- The Genkit dependency graph carries 59 transitive npm advisories (52 moderate, 7 high, 0 critical), every one of which reports `fixAvailable: false` — they resolve through `@genkit-ai/*` and its OpenTelemetry chain, so no non-breaking upgrade exists. They are scoped entirely to the Cloud Run advisory service: `npm audit --omit=dev --workspace @agentmesh/daemon` reports **0 vulnerabilities**, so the local security boundary that holds the vault, executor, approval gate, and SQLite state is unaffected. The cloud service additionally runs under private IAM, receives only allowlisted structural metadata, and has no route back to the repository, database, vault, or executor.
+- The Genkit dependency graph carries 59 transitive npm advisories (52 moderate, 7 high, 0 critical), every one of which reports `fixAvailable: false` — they resolve through `@genkit-ai/*` and its OpenTelemetry chain, so no non-breaking upgrade exists. They are scoped entirely to the Cloud Run advisory service: `npm audit --omit=dev --workspace @belay/daemon` reports **0 vulnerabilities**, so the local security boundary that holds the vault, executor, approval gate, and SQLite state is unaffected. The cloud service additionally runs under private IAM, receives only allowlisted structural metadata, and has no route back to the repository, database, vault, or executor.
 - Three historical pre-fix Cloud Run source archives remain in the participant-owned Google Cloud project and are disclosed in `docs/hackathon-build/cloud-run-evidence.md`.
 
 ## TODO Official Form Fields
@@ -191,13 +195,13 @@ The recording should be live and readable at 1080p, show visible Google Cloud pr
 | `28085` | Category | `Fortified Enterprise Fleet`. |
 | `28086` | Organization name | **TODO confirm:** organization name if applicable, otherwise `N/A` if accepted by the form. |
 | `28087` | Project start date | **TODO confirm:** repository evidence currently indicates `08-15-26`, within the submission period. Confirm no project code predates the hackathon. |
-| `28141` | Code repository | `https://github.com/codersguru-hub/AgentMesh`. Verify the final revision is pushed. |
+| `28141` | Code repository | `https://github.com/codersguru-hub/Belay`. Verify the final revision is pushed. |
 | `28089` | Reproducible testing instructions in README | `Yes`. |
 | `28088` | Hosted project URL | Optional; currently none. Do not use the private Cloud Run endpoint as a public UI. |
 | `28090` | Private testing instructions | Use the commands in **Testing Instructions** above; mention Windows sandbox `spawn EPERM` may require running Vite/npm outside a restricted host. |
 | `28091` | Google SDKs | `Genkit`. Do not claim the standalone Google GenAI SDK. |
 | `28142` | Google Cloud services | `Cloud Run`. |
-| `28092` | Architecture diagram upload | Upload `docs/assets/agentmesh-architecture.png`; this is a file upload, not a text answer. |
+| `28092` | Architecture diagram upload | Upload `docs/assets/belay-architecture.png`; this is a file upload, not a text answer. |
 | `28093`, `28101` | Startup Prize organization/email | Leave blank unless submitting for an eligible incorporated organization. |
 | `28143` | Google AI models | `gemini-3.6-flash`. |
 | `28106` | Optional public build content | **TODO optional:** add a public article/video that states it was created for this hackathon. |

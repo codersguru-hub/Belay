@@ -13,7 +13,7 @@
     "display_name": "Ahmed Soliman"
   },
   "project": {
-    "name": "AgentMesh",
+    "name": "Belay",
     "summary": "A local control plane for heterogeneous coding agents with shared state, deterministic token-efficient repository indexing, zero-leak secret handling, and human-approved remote execution.",
     "ai_usage": "",
     "codex_usage": ""

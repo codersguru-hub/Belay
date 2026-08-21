@@ -28,7 +28,7 @@ export const EnvironmentVariableDefinitionSchema = z
 
 export const EnvironmentSchemaV1Schema = z
   .object({
-    format: z.literal("agentmesh-env-schema"),
+    format: z.literal("belay-env-schema"),
     version: z.literal(1),
     profile: z.string().trim().min(1).max(80),
     variables: z.array(EnvironmentVariableDefinitionSchema).min(1).max(256)
@@ -59,7 +59,7 @@ export const EnvironmentSchemaV1Schema = z
 
 export const VaultEnvelopeV1Schema = z
   .object({
-    format: z.literal("agentmesh-vault"),
+    format: z.literal("belay-vault"),
     version: z.literal(1),
     cipher: z.literal("aes-256-gcm"),
     keyWrap: z.literal("age-ssh"),

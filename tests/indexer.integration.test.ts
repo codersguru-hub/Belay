@@ -15,7 +15,7 @@ const cleanupDatabases: Database.Database[] = [];
 const demoProjectRoot = resolve("tests/fixtures/demo-repo");
 
 function createService(projectRoot: string) {
-  const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-indexer-state-"));
+  const stateDirectory = mkdtempSync(join(tmpdir(), "belay-indexer-state-"));
   cleanupDirectories.push(stateDirectory);
   const opened = openStateDatabase(join(stateDirectory, "state.db"));
   cleanupDatabases.push(opened.database);
@@ -57,7 +57,7 @@ describe("deterministic project indexer", () => {
 
     expect(first!.manifest.project).toEqual(
       expect.objectContaining({
-        name: "agentmesh-indexer-fixture",
+        name: "belay-indexer-fixture",
         packageManagers: ["npm"],
         workspacePatterns: ["packages/*"]
       })
@@ -81,7 +81,7 @@ describe("deterministic project indexer", () => {
     expect(first!.manifest.exclusions).toEqual(
       expect.objectContaining({ secretFiles: 1, binaryFiles: 1 })
     );
-    expect(first!.canonicalJson).not.toContain("AGENTMESH_CANARY_MUST_NEVER_APPEAR");
+    expect(first!.canonicalJson).not.toContain("BELAY_CANARY_MUST_NEVER_APPEAR");
     expect(first!.canonicalJson).not.toContain("credentials.json");
     expect(first!.canonicalJson).not.toContain("logo.png");
     expect(first!.canonicalJson).not.toContain("generated.js");
@@ -94,7 +94,7 @@ describe("deterministic project indexer", () => {
   });
 
   it("truncates in a stable order and reports every topology omission", () => {
-    const temporaryRoot = mkdtempSync(join(tmpdir(), "agentmesh-large-project-"));
+    const temporaryRoot = mkdtempSync(join(tmpdir(), "belay-large-project-"));
     cleanupDirectories.push(temporaryRoot);
     const projectRoot = join(temporaryRoot, "repo");
     mkdirSync(join(projectRoot, "src"), { recursive: true });
@@ -121,27 +121,27 @@ describe("deterministic project indexer", () => {
     fixture.database.close();
   });
 
-  it("prunes local tool and custom AgentMesh state directories before traversal", () => {
-    const temporaryRoot = mkdtempSync(join(tmpdir(), "agentmesh-local-state-project-"));
+  it("prunes local tool and custom Belay state directories before traversal", () => {
+    const temporaryRoot = mkdtempSync(join(tmpdir(), "belay-local-state-project-"));
     cleanupDirectories.push(temporaryRoot);
     const projectRoot = join(temporaryRoot, "repo");
     mkdirSync(join(projectRoot, "src"), { recursive: true });
     mkdirSync(join(projectRoot, ".tools", "gcloud-config", "legacy_credentials"), {
       recursive: true
     });
-    mkdirSync(join(projectRoot, ".agentmesh-docs-qa"), { recursive: true });
+    mkdirSync(join(projectRoot, ".belay-docs-qa"), { recursive: true });
     writeFileSync(join(projectRoot, "package.json"), JSON.stringify({ name: "local-state-fixture" }));
     writeFileSync(join(projectRoot, "src", "index.ts"), "export const safe = true;\n");
     writeFileSync(
       join(projectRoot, ".tools", "gcloud-config", "legacy_credentials", "credentials.json"),
-      "AGENTMESH_LOCAL_TOOL_CANARY"
+      "BELAY_LOCAL_TOOL_CANARY"
     );
-    writeFileSync(join(projectRoot, ".agentmesh-docs-qa", "state.db"), "AGENTMESH_STATE_CANARY");
+    writeFileSync(join(projectRoot, ".belay-docs-qa", "state.db"), "BELAY_STATE_CANARY");
 
     const fixture = createService(projectRoot);
     const snapshot = fixture.manifests.indexProject(projectRoot);
-    expect(snapshot.canonicalJson).not.toContain("AGENTMESH_LOCAL_TOOL_CANARY");
-    expect(snapshot.canonicalJson).not.toContain("AGENTMESH_STATE_CANARY");
+    expect(snapshot.canonicalJson).not.toContain("BELAY_LOCAL_TOOL_CANARY");
+    expect(snapshot.canonicalJson).not.toContain("BELAY_STATE_CANARY");
     expect(snapshot.manifest.exclusions.excludedDirectories).toBeGreaterThanOrEqual(2);
     fixture.database.close();
   });

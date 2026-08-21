@@ -1,4 +1,4 @@
-import type { ToolError, ToolErrorCode } from "@agentmesh/contracts";
+import type { ToolError, ToolErrorCode } from "@belay/contracts";
 
 export class CoordinationError extends Error {
   readonly code: ToolErrorCode;
@@ -51,7 +51,7 @@ export function toToolError(error: unknown, fallbackCorrelationId: string): Tool
   return {
     ok: false,
     code: "INTERNAL_ERROR",
-    message: "AgentMesh could not complete the request.",
+    message: "Belay could not complete the request.",
     correlationId: fallbackCorrelationId,
     retryable: false
   };

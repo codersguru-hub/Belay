@@ -8,7 +8,7 @@
 
 ## Project Idea
 
-- Initial idea: AgentMesh, a local-and-cloud hybrid control plane for heterogeneous coding agents such as Claude Code, OpenAI Codex, and Antigravity. It provides shared state and file locks, deterministic token-saving repository context, zero-leak secret-backed execution, and auditable human approval boundaries.
+- Initial idea: Belay, a local-and-cloud hybrid control plane for heterogeneous coding agents such as Claude Code, OpenAI Codex, and Antigravity. It provides shared state and file locks, deterministic token-saving repository context, zero-leak secret-backed execution, and auditable human approval boundaries.
 - Primary user: Solo power developer or lead architect coordinating several CLI coding agents on one repository.
 - Hackathon category: Fortified Enterprise Fleet.
 - Hero demo: Index a dirty repository into a compact manifest, coordinate Codex and Claude Code without file collisions, inject encrypted environment secrets into a test process without prompt exposure, and intercept a remote staging action for human approval.

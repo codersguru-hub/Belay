@@ -127,7 +127,7 @@ export function createMcpSessionRouter(factory: () => McpServer): McpSessionRout
           }
           await server.close().catch(() => undefined);
           if (!res.headersSent) {
-            writeProtocolError(res, 500, "AgentMesh could not initialize the MCP session.");
+            writeProtocolError(res, 500, "Belay could not initialize the MCP session.");
           }
         }
         return;

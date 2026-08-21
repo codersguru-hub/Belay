@@ -11,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import type { EnvironmentSchemaV1, VaultEnvelopeV1 } from "@agentmesh/contracts";
+import type { EnvironmentSchemaV1, VaultEnvelopeV1 } from "@belay/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   AgeCliAdapter,
@@ -21,14 +21,14 @@ import {
 import { VaultError } from "../packages/daemon/src/vault/errors.js";
 import { VaultService } from "../packages/daemon/src/vault/vault-service.js";
 
-const CANARY = "AGENTMESH_VAULT_CANARY_9c17e45b2a";
+const CANARY = "BELAY_VAULT_CANARY_9c17e45b2a";
 const cleanupDirectories: string[] = [];
 const cleanupServices: VaultService[] = [];
 const workspaceAgeBinary = resolve(
   join(".tools", process.platform === "win32" ? "age.exe" : "age")
 );
 const localAgeBinary =
-  process.env.AGENTMESH_AGE_BIN ??
+  process.env.BELAY_AGE_BIN ??
   (existsSync(workspaceAgeBinary) ? workspaceAgeBinary : "age");
 const ageAvailable = spawnSync(localAgeBinary, ["--version"], {
   windowsHide: true,
@@ -41,7 +41,7 @@ const sshKeygenAvailable = spawnSync("ssh-keygen", ["-?"], {
 const realAgeTest = ageAvailable && sshKeygenAvailable ? it : it.skip;
 
 const schema: EnvironmentSchemaV1 = {
-  format: "agentmesh-env-schema",
+  format: "belay-env-schema",
   version: 1,
   profile: "test",
   variables: [
@@ -60,7 +60,7 @@ const schema: EnvironmentSchemaV1 = {
 };
 
 class TestKeyWrapAdapter implements KeyWrapAdapter {
-  private readonly wrappingKey = createHash("sha256").update("agentmesh-test-wrap").digest();
+  private readonly wrappingKey = createHash("sha256").update("belay-test-wrap").digest();
 
   inspectRecipient(): RecipientMetadata {
     return {
@@ -114,7 +114,7 @@ function generateSshKey(directory: string, name: string): string {
   const identityPath = join(directory, name);
   const result = spawnSync(
     "ssh-keygen",
-    ["-q", "-t", "ed25519", "-N", "", "-C", "agentmesh-vault-test", "-f", identityPath],
+    ["-q", "-t", "ed25519", "-N", "", "-C", "belay-vault-test", "-f", identityPath],
     { windowsHide: true, encoding: "utf8" }
   );
   if (result.status !== 0) {
@@ -134,7 +134,7 @@ afterEach(() => {
 
 describe("age-wrapped AES-GCM vault", () => {
   realAgeTest("round-trips through a real Ed25519 SSH identity without writing plaintext", async () => {
-    const paths = createPaths("agentmesh-vault-age-");
+    const paths = createPaths("belay-vault-age-");
     const identityPath = generateSshKey(paths.directory, "authorized_ed25519");
     const wrongIdentityPath = generateSshKey(paths.directory, "wrong_ed25519");
     const service = track(new VaultService(new AgeCliAdapter(localAgeBinary)));
@@ -195,7 +195,7 @@ describe("age-wrapped AES-GCM vault", () => {
   });
 
   it("fails closed for tampered header, ciphertext, tag, wrapped key, and schema", () => {
-    const paths = createPaths("agentmesh-vault-tamper-");
+    const paths = createPaths("belay-vault-tamper-");
     const service = track(new VaultService(new TestKeyWrapAdapter()));
     service.createVault({
       ...paths,
@@ -266,7 +266,7 @@ describe("age-wrapped AES-GCM vault", () => {
   });
 
   it("locks after inactivity and documents the SSH-agent-only limitation", async () => {
-    const paths = createPaths("agentmesh-vault-timeout-");
+    const paths = createPaths("belay-vault-timeout-");
     const service = track(new VaultService(new TestKeyWrapAdapter()));
     service.createVault({
       ...paths,
@@ -293,7 +293,7 @@ describe("age-wrapped AES-GCM vault", () => {
   });
 
   it("rejects overwrite attempts without changing existing artifacts", () => {
-    const paths = createPaths("agentmesh-vault-overwrite-");
+    const paths = createPaths("belay-vault-overwrite-");
     const service = track(new VaultService(new TestKeyWrapAdapter()));
     const input = {
       ...paths,

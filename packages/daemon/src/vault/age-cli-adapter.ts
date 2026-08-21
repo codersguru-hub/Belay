@@ -41,7 +41,7 @@ function requireReadableFile(filePath: string, kind: "recipient" | "identity"): 
 }
 
 export class AgeCliAdapter implements KeyWrapAdapter {
-  constructor(private readonly ageBinary = process.env.AGENTMESH_AGE_BIN ?? "age") {}
+  constructor(private readonly ageBinary = process.env.BELAY_AGE_BIN ?? "age") {}
 
   inspectRecipient(publicKeyPath: string): RecipientMetadata {
     const canonicalPath = requireReadableFile(publicKeyPath, "recipient");

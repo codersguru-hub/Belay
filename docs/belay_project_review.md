@@ -1,4 +1,4 @@
-# AgentMesh — Full Project Review
+# Belay — Full Project Review
 
 > **Reviewed:** 2026-08-15  
 > **Codebase Version:** `0.1.0`  
@@ -42,7 +42,7 @@
 
 ## 1. Executive Summary
 
-AgentMesh is an exceptionally well-engineered local-first control plane for coordinating independent CLI coding agents (Claude Code, OpenAI Codex, Antigravity). It provides:
+Belay is an exceptionally well-engineered local-first control plane for coordinating independent CLI coding agents (Claude Code, OpenAI Codex, Antigravity). It provides:
 
 - **Atomic file-lock coordination** via SQLite-WAL with single-winner transaction semantics
 - **Deterministic repository indexing** producing byte-identical bounded manifests (~275 tokens, ~1 KB)
@@ -118,7 +118,7 @@ flowchart TB
 ## 3. Package Structure & Dependency Analysis
 
 ```
-AgentMesh/
+Belay/
 ├── packages/
 │   ├── contracts/     8 files, 4 modules — shared Zod schemas and TypeScript interfaces
 │   ├── daemon/       50+ files, 10 subdirectories — core runtime
@@ -135,10 +135,10 @@ AgentMesh/
 
 | Package | Dependencies | Dev Dependencies |
 |:---|:---|:---|
-| `@agentmesh/contracts` | `zod` | — |
-| `@agentmesh/daemon` | `@agentmesh/contracts`, `better-sqlite3`, `@modelcontextprotocol/server`, `@modelcontextprotocol/node`, `@modelcontextprotocol/core`, `chokidar`, `ws` | — |
-| `@agentmesh/dashboard` | `react`, `react-dom` | `vite`, `@vitejs/plugin-react` |
-| `@agentmesh/cloud-service` | `@agentmesh/contracts`, `genkit`, `@genkit-ai/google-genai` | — |
+| `@belay/contracts` | `zod` | — |
+| `@belay/daemon` | `@belay/contracts`, `better-sqlite3`, `@modelcontextprotocol/server`, `@modelcontextprotocol/node`, `@modelcontextprotocol/core`, `chokidar`, `ws` | — |
+| `@belay/dashboard` | `react`, `react-dom` | `vite`, `@vitejs/plugin-react` |
+| `@belay/cloud-service` | `@belay/contracts`, `genkit`, `@genkit-ai/google-genai` | — |
 | Root (dev) | `@modelcontextprotocol/client`, `@types/better-sqlite3`, `@types/node`, `tsx`, `typescript ^7.0.2`, `vitest ^4.1.10` | — |
 
 > [!NOTE]
@@ -151,10 +151,10 @@ AgentMesh/
 ### 4.1 Build Output
 
 ```
-@agentmesh/contracts     → tsc ✅
-@agentmesh/cloud-service → tsc ✅
-@agentmesh/dashboard     → tsc + vite build ✅ (205.93 KB JS, 12.02 KB CSS)
-@agentmesh/daemon        → tsc ✅
+@belay/contracts     → tsc ✅
+@belay/cloud-service → tsc ✅
+@belay/dashboard     → tsc + vite build ✅ (205.93 KB JS, 12.02 KB CSS)
+@belay/daemon        → tsc ✅
 ```
 
 ### 4.2 Test Results
@@ -245,7 +245,7 @@ AgentMesh/
 
 - **Budget Enforcement:** Hard cap at 3,200 bytes (`MANIFEST_MAX_BYTES`). Deterministic truncation order: topology → dirtyFiles → scripts → configFiles → ports → workspacePatterns.
 - **Secret Exclusion:** Files matching `.env*`, `*.pem`, `*.key`, `*credentials*`, `*secret*`, `*.vault`, `id_rsa*`, `id_ed25519*`, `*.keystore`, `*.jks` are excluded before any content is read.
-- **Directory Exclusion:** 18 well-known directories pruned including `node_modules`, `.git`, `dist`, `.agentmesh`, `.tools`, `.agentmesh-docs-qa`, `__pycache__`, `.venv`, `.terraform`, etc.
+- **Directory Exclusion:** 18 well-known directories pruned including `node_modules`, `.git`, `dist`, `.belay`, `.tools`, `.belay-docs-qa`, `__pycache__`, `.venv`, `.terraform`, etc.
 - **Binary Exclusion:** 30+ binary extensions excluded.
 - **Canonical JSON:** Deterministic key ordering via `JSON.stringify` with sorted replacer. SHA-256 version hash computed over canonical output.
 - **Source Topology:** Regex-based extraction of named exports and import paths from JS/TS files. Limited but fit-for-purpose for structural summaries.
@@ -364,7 +364,7 @@ stateDiagram-v2
 - System prompt constrains the model to structural analysis only — explicitly forbids requesting source code, secrets, or execution.
 - Server-side forbidden value scanning as a defense-in-depth layer.
 - `/healthz` endpoint for Cloud Run health checks.
-- Request ID correlation via `x-agentmesh-request-id` header.
+- Request ID correlation via `x-belay-request-id` header.
 - Multi-stage Dockerfile: build stage → production-dependencies stage → minimal runtime stage. Only `contracts/dist` and `cloud-service/dist` reach the final image.
 
 **Local Resilience:** All daemon features operate fully offline. Cloud intelligence is optional and never gates local operation.
@@ -638,7 +638,7 @@ The hero demo test injects a known canary secret and scans **9 artifact categori
 > [!WARNING]
 > **`index.ts` Top-Level Side Effects**
 > 
-> [`index.ts`](packages/daemon/src/index.ts) executes `createAgentMeshApp()` and `await app.start()` at module evaluation time. Importing any re-exported utility (e.g., `openStateDatabase`, `CoordinationService`) from this module **automatically starts the daemon and binds to the network port**. The top-level `await` and signal handlers also lack `try/catch` guards.
+> [`index.ts`](packages/daemon/src/index.ts) executes `createBelayApp()` and `await app.start()` at module evaluation time. Importing any re-exported utility (e.g., `openStateDatabase`, `CoordinationService`) from this module **automatically starts the daemon and binds to the network port**. The top-level `await` and signal handlers also lack `try/catch` guards.
 > 
 > **Impact:** Prevents clean library-style imports of daemon internals. Startup failures (e.g., `EADDRINUSE`) produce unhandled promise rejections.
 > **Remediation:** Separate the CLI/server entry point (e.g., `cli.ts`) from the library re-exports in `index.ts`.
@@ -690,7 +690,7 @@ The hero demo test injects a known canary secret and scans **9 artifact categori
 
 ## 10. Final Verdict
 
-AgentMesh demonstrates **production-grade engineering quality** across every subsystem. The security posture is multi-layered and canary-verified. The architecture cleanly separates trust zones with appropriate boundaries. The documentation is thorough and the verification matrix is comprehensive.
+Belay demonstrates **production-grade engineering quality** across every subsystem. The security posture is multi-layered and canary-verified. The architecture cleanly separates trust zones with appropriate boundaries. The documentation is thorough and the verification matrix is comprehensive.
 
 **The project is submission-ready** pending completion of Item 12 (documentation, diagram, and Devpost packaging).
 

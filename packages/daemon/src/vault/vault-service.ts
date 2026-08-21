@@ -11,11 +11,11 @@ import type {
   EnvironmentSchemaV1,
   VaultEnvelopeV1,
   VaultStatus
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import {
   EnvironmentSchemaV1Schema,
   VaultEnvelopeV1Schema
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import { canonicalJson } from "../indexer/canonical-json.js";
 import type { KeyWrapAdapter } from "./age-cli-adapter.js";
 import { VaultError } from "./errors.js";
@@ -26,7 +26,7 @@ const SCHEMA_FILE_LIMIT_BYTES = 256 * 1024;
 const DEFAULT_INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
 
 interface VaultAadV1 {
-  format: "agentmesh-vault";
+  format: "belay-vault";
   version: 1;
   cipher: "aes-256-gcm";
   keyWrap: "age-ssh";
@@ -206,7 +206,7 @@ export class VaultService {
     const recipient = this.keyWrap.inspectRecipient(input.recipientPublicKeyPath);
     const createdAt = this.now().toISOString();
     const envelopeHeader = {
-      format: "agentmesh-vault" as const,
+      format: "belay-vault" as const,
       version: 1 as const,
       cipher: "aes-256-gcm" as const,
       keyWrap: "age-ssh" as const,

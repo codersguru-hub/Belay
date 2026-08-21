@@ -5,7 +5,7 @@ import {
   AcquireTaskInputSchema,
   GetStageContextInputSchema,
   LogCompletionInputSchema
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { describe, expect, it } from "vitest";
 import {
@@ -15,7 +15,7 @@ import {
 import { CoordinationError, toToolError } from "../packages/daemon/src/coordination/errors.js";
 import { openStateDatabase } from "../packages/daemon/src/db/connection.js";
 import { bootstrapProject } from "../packages/daemon/src/db/repositories/project-repository.js";
-import { createAgentMeshApp } from "../packages/daemon/src/app.js";
+import { createBelayApp } from "../packages/daemon/src/app.js";
 
 async function connectClient(url: string, name: string): Promise<Client> {
   const client = new Client({ name, version: "0.1.0" });
@@ -25,13 +25,13 @@ async function connectClient(url: string, name: string): Promise<Client> {
 
 describe("coordination recovery hardening", () => {
   it("preserves valid leases, reaps expired leases, and enforces heartbeat ownership across restart", async () => {
-    const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-restart-"));
+    const stateDirectory = mkdtempSync(join(tmpdir(), "belay-restart-"));
     const projectRoot = join(stateDirectory, "demo-repo");
     mkdirSync(projectRoot);
     let currentTime = Date.parse("2026-08-15T08:00:00.000Z");
     const now = () => new Date(currentTime);
 
-    const firstApp = createAgentMeshApp({
+    const firstApp = createBelayApp({
       stateDirectory,
       projectRoot,
       port: 0,
@@ -39,7 +39,7 @@ describe("coordination recovery hardening", () => {
       leaseSweepIntervalMilliseconds: 0
     });
     let firstClient: Client | undefined;
-    let secondApp: ReturnType<typeof createAgentMeshApp> | undefined;
+    let secondApp: ReturnType<typeof createBelayApp> | undefined;
     let secondClient: Client | undefined;
     try {
       const firstEndpoint = await firstApp.start();
@@ -110,7 +110,7 @@ describe("coordination recovery hardening", () => {
       await firstApp.close();
 
       currentTime = Date.parse("2026-08-15T08:00:40.000Z");
-      secondApp = createAgentMeshApp({
+      secondApp = createBelayApp({
         stateDirectory,
         projectRoot,
         port: 0,
@@ -166,7 +166,7 @@ describe("coordination recovery hardening", () => {
   });
 
   it("persists exact acquisition and completion idempotency across database restart", () => {
-    const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-idempotency-"));
+    const stateDirectory = mkdtempSync(join(tmpdir(), "belay-idempotency-"));
     const projectRoot = join(stateDirectory, "demo-repo");
     mkdirSync(projectRoot);
     const databasePath = join(stateDirectory, "state.db");
@@ -235,7 +235,7 @@ describe("coordination recovery hardening", () => {
   });
 
   it("keeps stage context deterministic and within its measured byte budget", () => {
-    const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-context-"));
+    const stateDirectory = mkdtempSync(join(tmpdir(), "belay-context-"));
     const projectRoot = join(stateDirectory, "demo-repo");
     mkdirSync(projectRoot);
     const opened = openStateDatabase(join(stateDirectory, "state.db"));
@@ -286,7 +286,7 @@ describe("coordination recovery hardening", () => {
   });
 
   it("projects SQLite write contention as a retryable sanitized error", () => {
-    const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-busy-"));
+    const stateDirectory = mkdtempSync(join(tmpdir(), "belay-busy-"));
     const projectRoot = join(stateDirectory, "demo-repo");
     mkdirSync(projectRoot);
     const databasePath = join(stateDirectory, "state.db");

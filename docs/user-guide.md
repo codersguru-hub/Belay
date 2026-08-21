@@ -1,6 +1,6 @@
-# AgentMesh user guide
+# Belay user guide
 
-This guide is for evaluating the AgentMesh proof of concept locally over several days. AgentMesh runs as a loopback-only control plane: coding agents connect through MCP, persistent coordination data lives in SQLite WAL, the dashboard shows sanitized state, and optional Gemini summaries use a private Cloud Run service.
+This guide is for evaluating the Belay proof of concept locally over several days. Belay runs as a loopback-only control plane: coding agents connect through MCP, persistent coordination data lives in SQLite WAL, the dashboard shows sanitized state, and optional Gemini summaries use a private Cloud Run service.
 
 ## 1. Install and verify
 
@@ -14,8 +14,8 @@ Requirements:
 Clone and verify:
 
 ```bash
-git clone https://github.com/codersguru-hub/AgentMesh.git
-cd AgentMesh
+git clone https://github.com/codersguru-hub/Belay.git
+cd Belay
 npm ci
 npm run build
 npm test
@@ -23,7 +23,7 @@ npm test
 
 The current baseline is **40 passing tests across 11 files**. Run `npm run verify:no-leaks` to confirm the zero-leak and privacy boundaries.
 
-## 2. Start AgentMesh for a repository
+## 2. Start Belay for a repository
 
 Start the local control plane with a single command:
 
@@ -31,13 +31,13 @@ Start the local control plane with a single command:
 # Starts the control plane and opens the Cockpit in your browser
 npm start
 # or via CLI directly:
-npx agentmesh start --open
+npx belay start --open
 ```
 
 ### Management CLI Commands
 
 ```bash
-# Initialize .agentmesh/config.json and git protections in your project
+# Initialize .belay/config.json and git protections in your project
 npm run init
 
 # Run system doctor to verify Node version, ports, age CLI, and cloud connectivity
@@ -46,31 +46,31 @@ npm run doctor
 
 ### Custom configuration (Optional)
 
-You can customize parameters via `.agentmesh/config.json`, CLI flags, or environment variables:
+You can customize parameters via `.belay/config.json`, CLI flags, or environment variables:
 
 ```json
-// .agentmesh/config.json
+// .belay/config.json
 {
   "port": 3420,
-  "workspaceName": "agentmesh-suite",
-  "stateDirectory": "~/.agentmesh"
+  "workspaceName": "belay-suite",
+  "stateDirectory": "~/.belay"
 }
 ```
 
 ```powershell
 # Custom flags example:
-npx agentmesh start -p 3420 -r "D:\path\to\project" -w "suite-alpha" --open
+npx belay start -p 3420 -r "D:\path\to\project" -w "suite-alpha" --open
 ```
 
 Open the cockpit at [http://127.0.0.1:3420/](http://127.0.0.1:3420/). The server binds strictly to `127.0.0.1`; do not expose it through a public proxy or port-forward.
 
 ### State persistence
 
-By default, persistent data (SQLite WAL database) lives in `~/.agentmesh/state.db`. Use the same state directory on subsequent starts to retain tasks, checklists, memory, approvals, and manifest metadata.
+By default, persistent data (SQLite WAL database) lives in `~/.belay/state.db`. Use the same state directory on subsequent starts to retain tasks, checklists, memory, approvals, and manifest metadata.
 
 ## 3. Connect MCP Clients
 
-AgentMesh supports both **Streamable HTTP** and **Standard I/O (stdio)** MCP transports:
+Belay supports both **Streamable HTTP** and **Standard I/O (stdio)** MCP transports:
 
 ### Option A: Streamable HTTP (Claude Code CLI, Antigravity, Codex, Cursor)
 
@@ -82,13 +82,13 @@ http://127.0.0.1:3420/mcp
 
 - **Claude Code (CLI)**:
   ```bash
-  claude mcp add agentmesh http://127.0.0.1:3420/mcp
+  claude mcp add belay http://127.0.0.1:3420/mcp
   ```
 - **Antigravity / Gemini**: Add to `.gemini/settings.json`:
   ```json
   {
     "mcpServers": {
-      "agentmesh": {
+      "belay": {
         "url": "http://127.0.0.1:3420/mcp"
       }
     }
@@ -98,7 +98,7 @@ http://127.0.0.1:3420/mcp
   ```json
   {
     "mcpServers": {
-      "agentmesh": {
+      "belay": {
         "url": "http://127.0.0.1:3420/mcp"
       }
     }
@@ -107,14 +107,14 @@ http://127.0.0.1:3420/mcp
 
 ### Option B: Standard I/O (Claude Desktop App)
 
-Claude Desktop only supports `stdio` child processes in `claude_desktop_config.json`. Configure the universal `agentmesh stdio` bridge:
+Claude Desktop only supports `stdio` child processes in `claude_desktop_config.json`. Configure the universal `belay stdio` bridge:
 
 ```json
 {
   "mcpServers": {
-    "agentmesh": {
+    "belay": {
       "command": "npx",
-      "args": ["-y", "agentmesh", "stdio"]
+      "args": ["-y", "belay", "stdio"]
     }
   }
 }
@@ -224,7 +224,7 @@ with `reindex_project`, then read `project://manifest`.
 
 ## 5. Exercise the approval intercept
 
-With the daemon running, open another terminal in the AgentMesh repository:
+With the daemon running, open another terminal in the Belay repository:
 
 ```bash
 npm run demo:request-approval
@@ -274,7 +274,7 @@ Cloud intelligence is optional. Without it, the cockpit reports cloud intelligen
 To use an existing private Cloud Run deployment, obtain Application Default Credentials that can invoke the service, then set:
 
 ```powershell
-$env:AGENTMESH_CLOUD_URL = "https://your-private-service-url.run.app"
+$env:BELAY_CLOUD_URL = "https://your-private-service-url.run.app"
 npm run start
 ```
 
@@ -287,7 +287,7 @@ Deployment details are in [hackathon-build/cloud-run-evidence.md](hackathon-buil
 ### At the start of each session
 
 1. Pull the latest reviewed revision.
-2. Start AgentMesh with the same project root and state directory.
+2. Start Belay with the same project root and state directory.
 3. Check `/healthz` and open the cockpit.
 4. Call `get_stage_context` from every connected agent.
 5. Confirm stale tasks and leases match the previous session's expected state.
@@ -316,17 +316,17 @@ Suggested scenarios:
 - The daemon restarts while durable locks exist.
 - An approval is rejected, approved exactly once, expired, and restarted while ambiguous.
 - Cloud access is disabled and local features remain available.
-- Files under `.tools`, `.agentmesh-*`, secret-shaped paths, and unreadable directories stay out of the manifest.
+- Files under `.tools`, `.belay-*`, secret-shaped paths, and unreadable directories stay out of the manifest.
 
 ## 9. Troubleshooting
 
 ### Port 3420 is already in use
 
-Set `AGENTMESH_PORT` to another local port and update the MCP URL in every client.
+Set `BELAY_PORT` to another local port and update the MCP URL in every client.
 
 ### The wrong repository was indexed
 
-Stop the daemon, set `AGENTMESH_PROJECT_ROOT` to the canonical project path, use a project-specific state directory, and restart.
+Stop the daemon, set `BELAY_PROJECT_ROOT` to the canonical project path, use a project-specific state directory, and restart.
 
 ### A task remains locked
 
@@ -334,11 +334,11 @@ Use `get_stage_context` to verify the owner and lease expiry. The owner can hear
 
 ### `spawn EPERM` appears on Windows
 
-Some managed or sandboxed Windows environments deny Vite or disposable test child-process creation. Retry in a normal terminal with the same Node/npm versions. Do not disable AgentMesh command validation or convert registered execution to `shell: true`.
+Some managed or sandboxed Windows environments deny Vite or disposable test child-process creation. Retry in a normal terminal with the same Node/npm versions. Do not disable Belay command validation or convert registered execution to `shell: true`.
 
 ### Cloud shows degraded
 
-Confirm `AGENTMESH_CLOUD_URL`, Application Default Credentials, Cloud Run Invoker permission, service region, and private service health. Local operation is expected to remain available.
+Confirm `BELAY_CLOUD_URL`, Application Default Credentials, Cloud Run Invoker permission, service region, and private service health. Local operation is expected to remain available.
 
 ### Vault is locked
 
@@ -349,7 +349,7 @@ For the current proof of concept, use `npm run demo:verify` to validate the comp
 Include:
 
 - operating system and Node/npm versions;
-- AgentMesh commit SHA;
+- Belay commit SHA;
 - project size and primary framework;
 - exact command or MCP tool used;
 - sanitized input shape;

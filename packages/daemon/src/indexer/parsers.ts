@@ -146,11 +146,24 @@ interface StaticToken {
   depth: number;
 }
 
+// The `typescript/unstable/ast` scanner expects callers to re-enter template-literal scanning
+// (TemplateHead/Middle/Tail) after each `${...}` substitution; this loop never does that, so a
+// closing `}` inside a template gets scanned as a plain brace and the cursor can desync from the
+// real source. On most files that just produces a garbled (but finite) token stream — but on files
+// with enough interpolated template literals, the desync can leave the scanner never reporting
+// EndOfFile, looping forever and growing `tokens` unbounded until the process runs out of memory.
+// A 256KB source file legitimately produces at most tens of thousands of tokens, so this cap is
+// far above anything real while stopping a runaway scan in well under a second.
+const MAX_SCAN_TOKENS = 400_000;
+
 function tokenizeSource(content: string, jsx: boolean): StaticToken[] {
   const scanner: Scanner = createScanner(true, jsx ? LanguageVariant.JSX : LanguageVariant.Standard, content);
   const tokens: StaticToken[] = [];
   let depth = 0;
   for (let kind = scanner.scan(); kind !== SyntaxKind.EndOfFile; kind = scanner.scan()) {
+    if (tokens.length >= MAX_SCAN_TOKENS) {
+      throw new Error("Source topology scan exceeded the token safety cap without reaching end-of-file.");
+    }
     if (kind === SyntaxKind.CloseBraceToken) depth = Math.max(0, depth - 1);
     tokens.push({
       kind,

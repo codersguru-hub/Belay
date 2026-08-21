@@ -1,11 +1,11 @@
 {
-  "name": "agentmesh",
+  "name": "belay",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Local-first control plane for heterogeneous coding agents.",
+  "description": "Local-first control plane for heterogeneous coding agent fleets.",
   "bin": {
-    "agentmesh": "./bin/agentmesh.js"
+    "belay": "./bin/belay.js"
   },
   "workspaces": [
     "packages/contracts",
@@ -15,10 +15,10 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "dev": "npm run dev --workspace @agentmesh/daemon",
-    "start": "node bin/agentmesh.js start",
-    "init": "node bin/agentmesh.js init",
-    "doctor": "node bin/agentmesh.js doctor",
+    "dev": "npm run dev --workspace @belay/daemon",
+    "start": "node bin/belay.js start",
+    "init": "node bin/belay.js init",
+    "doctor": "node bin/belay.js doctor",
     "test": "npm run build && vitest run",
     "benchmark:indexer": "npm run build && node scripts/benchmark-indexer.mjs",
     "smoke:phase1": "node --experimental-strip-types scripts/smoke-phase1.ts",
@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.0.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.2.0",
     "tsx": "^4.23.12",

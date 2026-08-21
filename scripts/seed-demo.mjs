@@ -1,5 +1,5 @@
 /**
- * Seeds a running AgentMesh daemon with a realistic multi-agent state so the cockpit
+ * Seeds a running Belay daemon with a realistic multi-agent state so the cockpit
  * demonstrates the product instead of an empty shell.
  *
  * Everything here goes through the real MCP surface as four independent clients, so the
@@ -11,13 +11,13 @@
 import { resolve } from "node:path";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
-const endpoint = process.env.AGENTMESH_MCP_URL ?? "http://127.0.0.1:3420/mcp";
-const projectRoot = resolve(process.env.AGENTMESH_PROJECT_ROOT ?? process.cwd());
+const endpoint = process.env.BELAY_MCP_URL ?? "http://127.0.0.1:3420/mcp";
+const projectRoot = resolve(process.env.BELAY_PROJECT_ROOT ?? process.cwd());
 
 const AGENTS = ["Antigravity", "Claude Desktop", "Codex", "OpenCode"];
 
 async function connect(name) {
-  const client = new Client({ name: `agentmesh-seed-${name}`, version: "0.1.0" });
+  const client = new Client({ name: `belay-seed-${name}`, version: "0.1.0" });
   await client.connect(new StreamableHTTPClientTransport(new URL(endpoint)));
   return client;
 }

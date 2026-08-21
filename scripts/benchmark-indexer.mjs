@@ -6,7 +6,7 @@ import { bootstrapProject } from "../packages/daemon/dist/db/repositories/projec
 import { ManifestService } from "../packages/daemon/dist/indexer/manifest-service.js";
 
 const projectRoot = resolve(process.argv[2] ?? "tests/fixtures/demo-repo");
-const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-indexer-benchmark-"));
+const stateDirectory = mkdtempSync(join(tmpdir(), "belay-indexer-benchmark-"));
 const { database } = openStateDatabase(join(stateDirectory, "state.db"));
 
 try {

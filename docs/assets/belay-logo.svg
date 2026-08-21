@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 200" width="660" height="200" role="img" aria-label="Belay">
+  <title>Belay</title>
+  <defs>
+    <linearGradient id="ropeL" gradientUnits="userSpaceOnUse" x1="30" y1="24" x2="134" y2="182">
+      <stop offset="0%" stop-color="#7dd3fc"/>
+      <stop offset="55%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(6,15.5) scale(0.82)">
+    <path d="M 30 24 L 104 96" fill="none" stroke="url(#ropeL)" stroke-width="16" stroke-linecap="round"/>
+    <rect x="74" y="46" width="54" height="112" rx="27" fill="none" stroke="#64748b" stroke-width="16"/>
+    <path d="M 104 96 C 132 122 134 152 112 168 C 94 181 66 174 46 182" fill="none" stroke="url(#ropeL)" stroke-width="16" stroke-linecap="round"/>
+  </g>
+  <text x="152" y="108" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="78" font-weight="700" fill="currentColor" letter-spacing="-2.5">Belay</text>
+  <text x="156" y="144" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="17" font-weight="500" fill="#94a3b8" letter-spacing="3">CONTROL PLANE FOR AGENT FLEETS</text>
+</svg>

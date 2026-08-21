@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "studio-workbench": {
+      "targetKind": "existing-ui",
+      "projectId": "70d0c566-2d1c-4f79-950a-800ff9f2ff35",
+      "baselineDraftId": "70290b05-f995-43c4-b2c1-92c7316c494d",
+      "activeDraftId": "70290b05-f995-43c4-b2c1-92c7316c494d",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "13003c4e-9d6c-419b-a8b8-26434cd43820",
+        "6380b59e-3380-4e33-ba7c-97e3f850b521",
+        "packages-dashboard-public-belay-icon.svg"
+      ],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "packages-dashboard-public-belay-icon.svg",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/70d0c566-2d1c-4f79-950a-800ff9f2ff35/brand-assets/packages-dashboard-public-belay-icon.svg/belay-icon.svg",
+          "sourcePath": "packages/dashboard/public/belay-icon.svg"
+        }
+      },
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "packages/dashboard/src/App.tsx",
+        "packages/dashboard/src/components/StudioView.tsx:333:1019",
+        "packages/dashboard/src/components/DiffViewer.tsx",
+        "packages/dashboard/src/components/MessageBody.tsx",
+        "packages/dashboard/src/styles.css:1:5",
+        "packages/dashboard/src/styles.css:87:145",
+        "packages/dashboard/src/styles.css:149:536",
+        "packages/dashboard/src/styles.css:537:1141",
+        "packages/dashboard/src/styles.css:1142:1374",
+        "packages/dashboard/src/styles.css:1547:1796",
+        "packages/dashboard/src/styles.css:1798:2219"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "9a68b44bb0b80adaaa5afc3ef9929b9343d4014c6ace4cd18145bced41ff061c",
+        "packages/dashboard/src/App.tsx": "7ca1bd9aae5de0016f6bf9e3d3ae86cbb795cdd0f20d512a8c10a85d7e3de2ae",
+        "packages/dashboard/src/components/StudioView.tsx": "5e61434aef56752297c616a7f2e5cc241081304ebeda023fc668b83b775ff4e3",
+        "packages/dashboard/src/components/DiffViewer.tsx": "18f302c57d4ce007363e6876bea0e9f43c623039dceb56bff24c4241eed23c2e",
+        "packages/dashboard/src/components/MessageBody.tsx": "4be35f713476d3bf5168c3325c600a9fa6b1ec271c032c696c9cfd4cb757fdae",
+        "packages/dashboard/src/styles.css": "28bc2378198d3650908c3b34fd77a2a326d9b61133b8d3f16272b60ab25bf68d"
+      },
+      "components": [
+        {
+          "name": "StudioTopbar",
+          "id": "8572c473-ad50-4f76-9973-8034125b49b4",
+          "sourcePath": "packages/dashboard/src/App.tsx",
+          "logoAssetKey": "packages-dashboard-public-belay-icon.svg"
+        }
+      ],
+      "drafts": {
+        "70290b05-f995-43c4-b2c1-92c7316c494d": {
+          "title": "Current Belay Studio — Baseline",
+          "visualDirection": "faithful current Studio baseline",
+          "currentVersion": 1
+        },
+        "c41e493f-b971-459c-afab-b27ace551255": {
+          "title": "Belay Studio Launch Workbench",
+          "visualDirection": "compact task launch workbench",
+          "parentDraftId": "70290b05-f995-43c4-b2c1-92c7316c494d",
+          "currentVersion": 1
+        },
+        "d9e4c24b-0e34-4ff1-9f75-df2657de1ea0": {
+          "title": "Belay Studio — Review-forward",
+          "visualDirection": "review-forward command workspace",
+          "parentDraftId": "70290b05-f995-43c4-b2c1-92c7316c494d",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-08-20T19:25:30.1042572+03:00"
+    }
+  }
+}

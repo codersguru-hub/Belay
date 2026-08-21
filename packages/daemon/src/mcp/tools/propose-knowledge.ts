@@ -1,4 +1,4 @@
-import { ProposeKnowledgeInputSchema } from "@agentmesh/contracts";
+import { ProposeKnowledgeInputSchema } from "@belay/contracts";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { ApprovalService } from "../../approval/approval-service.js";
 import { failedToolResult, successfulToolResult } from "../tool-result.js";

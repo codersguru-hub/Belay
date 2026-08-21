@@ -1,9 +1,11 @@
 import { createHash } from "node:crypto";
 import {
   CLOUD_SUMMARY_MAX_BYTES,
+  FleetTaskDecompositionRequestV1Schema,
   CloudSummaryRequestV1Schema,
+  type FleetTaskDecompositionRequestV1,
   type CloudSummaryRequestV1
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 
 const FORBIDDEN_KEY = /(?:^|_)(?:body|code|content|credential|database_url|private_key|raw|secret|source|token)(?:$|_)/iu;
 const FORBIDDEN_VALUE_PATTERNS = [
@@ -27,7 +29,7 @@ export class EgressRejectedError extends Error {
 }
 
 export interface AllowedEgress {
-  payload: CloudSummaryRequestV1;
+  payload: CloudSummaryRequestV1 | FleetTaskDecompositionRequestV1;
   canonicalJson: string;
   payloadHash: string;
   byteSize: number;
@@ -38,6 +40,8 @@ export interface AllowedEgress {
     topology: number;
     audit: number;
     conflictHeldPaths: number;
+    fleetCandidatePaths: number;
+    fleetAgents: number;
   };
 }
 
@@ -97,26 +101,44 @@ export class EgressGuard {
     });
     if (forbidden) throw new EgressRejectedError("FORBIDDEN_CONTENT");
 
-    const parsed = CloudSummaryRequestV1Schema.safeParse(candidate);
-    if (!parsed.success) throw new EgressRejectedError("SCHEMA_REJECTED");
+    const summary = CloudSummaryRequestV1Schema.safeParse(candidate);
+    const fleet = summary.success
+      ? undefined
+      : FleetTaskDecompositionRequestV1Schema.safeParse(candidate);
+    const parsed = summary.success ? summary : fleet;
+    if (!parsed?.success) throw new EgressRejectedError("SCHEMA_REJECTED");
     const canonicalJson = JSON.stringify(parsed.data);
     const byteSize = Buffer.byteLength(canonicalJson, "utf8");
     if (byteSize > CLOUD_SUMMARY_MAX_BYTES) {
       throw new EgressRejectedError("PAYLOAD_TOO_LARGE");
     }
+    const fieldCounts = parsed.data.kind === "fleet_task_decomposition"
+      ? {
+          frameworks: parsed.data.manifest.frameworks.length,
+          scripts: 0,
+          ports: 0,
+          topology: 0,
+          audit: 0,
+          conflictHeldPaths: 0,
+          fleetCandidatePaths: parsed.data.manifest.candidatePaths.length,
+          fleetAgents: parsed.data.agents.length
+        }
+      : {
+          frameworks: parsed.data.manifest?.frameworks.length ?? 0,
+          scripts: parsed.data.manifest?.scripts.length ?? 0,
+          ports: parsed.data.manifest?.ports.length ?? 0,
+          topology: parsed.data.manifest?.topology.length ?? 0,
+          audit: parsed.data.audit?.length ?? 0,
+          conflictHeldPaths: parsed.data.conflict?.heldPaths.length ?? 0,
+          fleetCandidatePaths: 0,
+          fleetAgents: 0
+        };
     return {
       payload: parsed.data,
       canonicalJson,
       payloadHash: createHash("sha256").update(canonicalJson).digest("hex"),
       byteSize,
-      fieldCounts: {
-        frameworks: parsed.data.manifest?.frameworks.length ?? 0,
-        scripts: parsed.data.manifest?.scripts.length ?? 0,
-        ports: parsed.data.manifest?.ports.length ?? 0,
-        topology: parsed.data.manifest?.topology.length ?? 0,
-        audit: parsed.data.audit?.length ?? 0,
-        conflictHeldPaths: parsed.data.conflict?.heldPaths.length ?? 0
-      }
+      fieldCounts
     };
   }
 }

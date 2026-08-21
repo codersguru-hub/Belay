@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import type { CommandPolicyClass, CommandRunStatus } from "@agentmesh/contracts";
+import type { CommandPolicyClass, CommandRunStatus } from "@belay/contracts";
 
 export interface StartCommandRun {
   id: string;

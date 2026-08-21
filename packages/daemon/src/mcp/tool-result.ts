@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { ToolError } from "@agentmesh/contracts";
+import type { ToolError } from "@belay/contracts";
 import { toToolError } from "../coordination/errors.js";
 
 type StructuredToolValue = Record<string, unknown>;
@@ -59,7 +59,7 @@ function successSummary(value: StructuredToolValue): string {
     const recentMemory = Array.isArray(value.recentMemory) ? value.recentMemory.length : 0;
     return `Stage context contains ${knowledge} approved fact(s), ${checklist} checklist item(s), ${activeTasks} active task(s), and ${recentMemory} recent activity event(s).`;
   }
-  return "AgentMesh request completed.";
+  return "Belay request completed.";
 }
 
 export function successfulToolResult(value: object) {

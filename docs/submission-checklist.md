@@ -4,7 +4,7 @@ This is a local preparation inventory. Nothing in this file means the project ha
 
 ## Repository
 
-- [x] Public repository: `https://github.com/codersguru-hub/AgentMesh`.
+- [x] Public repository: `https://github.com/codersguru-hub/Belay`.
 - [x] Create and review the initial project commit on `main`.
 - [ ] Confirm `git status` contains no `.env`, `.vault`, identity, database, WAL, log, `.tools`, or cloud credential material.
 - [ ] Confirm the repository license and copyright owner are correct.
@@ -14,10 +14,11 @@ This is a local preparation inventory. Nothing in this file means the project ha
 
 - [x] Clean `npm ci` completed.
 - [x] Workspace build passed.
-- [x] Full suite passed: 40 tests across 11 files.
+- [x] Full suite passed: 54 tests across 12 files.
 - [x] Integrated hero verifier passed.
 - [x] Expanded canary/leak verifier passed.
 - [x] Private Cloud Run/Gemini smoke evidence recorded.
+- [x] Gemini fleet-decomposition smoke returned three structured tasks from the private Cloud Run revision.
 - [x] Unauthenticated Cloud Run request returned 403.
 - [x] Exact minimal cloud upload boundary documented.
 - [x] Architecture source, editable SVG, and Devpost-compatible 1440×900 PNG export included.
@@ -26,10 +27,11 @@ This is a local preparation inventory. Nothing in this file means the project ha
 
 ## Screenshot inventory
 
-- [x] `docs/screenshots/agentmesh-cockpit-approval.png` — hero approval intercept with requester, target, digest, policy reason, and local-degraded/cloud-optional posture.
-- [x] `docs/screenshots/agentmesh-cockpit-fail-closed.png` — negative proof that an ambiguous execution becomes `indeterminate` rather than silently succeeding or retrying.
+- [x] `docs/screenshots/belay-cockpit-approval.png` — hero approval intercept with requester, target, digest, policy reason, and local-degraded/cloud-optional posture.
+- [x] `docs/screenshots/belay-cockpit-fail-closed.png` — negative proof that an ambiguous execution becomes `indeterminate` rather than silently succeeding or retrying.
 - [ ] Capture the Cloud Run service page showing the ready revision, region, private IAM posture, and runtime identity. Crop out account identifiers not needed for judging.
 - [ ] Capture the successful Gemini smoke response showing request ID, model, risk label, and generated timestamp; do not show auth tokens or local gcloud configuration.
+- [ ] After explicitly approving the Cloud Run redeploy, capture Studio’s **Plan with Gemini** result and the matching `gemini_fleet_plan_completed` Cloud Run log with request ID, plan ID, model, and task count; do not expose the high-level goal if it contains sensitive business context.
 
 ## Video
 
@@ -41,12 +43,14 @@ This is a local preparation inventory. Nothing in this file means the project ha
 
 ## Google Cloud proof
 
-- Project: `agentmesh-505611`
+- Project: `belay-505611`
 - Region: `us-central1`
-- Private service: `agentmesh-intelligence`
-- Ready revision: `agentmesh-intelligence-00001-4nr`
+- Private service: `belay-intelligence`
+- Ready revision: `belay-intelligence-00001-4nr`
 - Successful minimal-context build: `800d1d28-5597-4e89-9554-ed4d912ec7f8`
 - Gemini smoke request: `582b5e2a-8f57-4d13-a314-289d9a07e5fa`
+- Gemini fleet request / plan: `6afbcd8c-1ec7-40ed-9508-d19077e2b570` / `c55524ed-2dda-44c0-8945-b99ff0233be2`
+- Current ready revision / build: `belay-intelligence-00004-lnd` / `44ee6830-8e2b-4b0c-be2f-7ad20204a21d`
 - Model: `gemini-3.6-flash`
 - Full sanitized record: `docs/hackathon-build/cloud-run-evidence.md`
 
@@ -54,7 +58,7 @@ This is a local preparation inventory. Nothing in this file means the project ha
 
 Live submission requirements were fetched from Devpost on 2026-08-15 and reported complete for hackathon ID `30845` (`allthingsagentichackathon`). A video is required; a hosted website and ZIP upload are not required. The narrative must cover the problem, value proposition, features, technologies, data sources, findings, and learnings. The approximately four-minute demo must show the app and proof that its backend ran on Google Cloud.
 
-| Field ID | Required answer/evidence | AgentMesh response |
+| Field ID | Required answer/evidence | Belay response |
 | --- | --- | --- |
 | `28083` | Submitter type | Confirm `Individuals`, `Team of individuals`, or `Organization`. |
 | `28084` | Country of residence | Confirm at submission. |
@@ -67,7 +71,7 @@ Live submission requirements were fetched from Devpost on 2026-08-15 and reporte
 | `28090` | Private testing instructions | Optional; derive from the README and hero verifier. |
 | `28091` | Google SDKs (multi-select) | `Genkit`. The implementation uses the `@genkit-ai/google-genai` plugin, not the standalone `@google/genai` SDK. |
 | `28142` | Google Cloud services (multi-select) | `Cloud Run`. |
-| `28092` | Architecture upload | Required file; upload `docs/assets/agentmesh-architecture.png` (PNG/JPG/PDF/PPT/PPTX accepted, max 35 MiB). Do not send it as a text custom answer. |
+| `28092` | Architecture upload | Required file; upload `docs/assets/belay-architecture.png` (PNG/JPG/PDF/PPT/PPTX accepted, max 35 MiB). Do not send it as a text custom answer. |
 | `28093`, `28101` | Startup Prize organization/email | Optional; complete only if eligible and opting in. |
 | `28143` | Google AI models | `gemini-3.6-flash`, satisfying the Gemini 3.5-or-newer requirement. |
 | `28106`, `28107` | Public content/social links | Optional bonus; content must state it was created for this hackathon, and social posts use `#AllThingsAgenticHackathon`. |

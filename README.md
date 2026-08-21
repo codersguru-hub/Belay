@@ -1,10 +1,12 @@
-# AgentMesh
+<img src="docs/assets/belay-logo.svg" alt="Belay" width="360">
 
-> The local control plane for multi-agent coding: shared state, token-efficient indexing, zero-leak execution, and human-approved mutation.
+> The local control plane for multi-agent coding fleets: shared state, token-efficient indexing, zero-leak execution, and human-approved mutation.
 
-AgentMesh lets Claude Code, OpenAI Codex, Antigravity, and other MCP clients work independently against one repository without losing shared context or colliding on protected files. The sensitive enforcement plane stays local. Gemini on Cloud Run receives only schema-validated structural metadata and returns advisory summaries; it cannot read the repository, access the vault, or authorize execution.
+> *Your agents climb. Belay holds the rope.*
 
-![AgentMesh approval cockpit](docs/screenshots/agentmesh-cockpit-approval.png)
+Belay lets Claude Code, OpenAI Codex, Antigravity, and other MCP clients work independently against one repository without losing shared context or colliding on protected files. The sensitive enforcement plane stays local. Gemini on Cloud Run acts as the Cloud Arbiter and Fleet Intelligence Engine: it decomposes high-level goals, assigns agent/file-lease topology, adjudicates conflicts, and explains risk using schema-validated metadata only. It cannot read source bodies, access the vault, authorize execution, or override SQLite-WAL policy.
+
+![Belay approval cockpit](docs/screenshots/belay-cockpit-approval.png)
 
 ## What works
 
@@ -16,9 +18,9 @@ AgentMesh lets Claude Code, OpenAI Codex, Antigravity, and other MCP clients wor
 - AES-256-GCM environment vault with an `age`-wrapped random DEK for supported Ed25519/RSA SSH identity files.
 - Registry-only, `shell: false` execution with minimal environment injection, time/output limits, and split-stream secret redaction.
 - Single-use approval digests, authenticated local decisions, replay protection, WebSocket updates, and fail-closed crash recovery.
-- React cockpit plus an authenticated, private Cloud Run service using Genkit and Gemini.
+- React cockpit and Studio Workbench plus an authenticated, private Google Cloud Run service using Genkit TypeScript and Gemini Flash for structured fleet decomposition and conflict intelligence.
 
-AgentMesh is a control plane, not an autonomous orchestrator: it provides shared rails and policy boundaries but does not choose agents, assign tasks, or sequence prompts.
+Belay is a hybrid control plane, not a replacement agent framework: Gemini may propose a pre-execution fleet plan, while the local daemon remains the sole authority that validates paths, grants leases, approves mutations, and executes registered commands.
 
 ## Requirements
 
@@ -42,11 +44,9 @@ npm run verify:no-leaks
 
 Expected results on the current proof-of-concept baseline:
 
-- 46 tests across 11 test files (`verify:no-leaks` covers 19 of them). On a clean checkout you
-  should see **45 passed, 1 skipped**: the real-`age` Ed25519 round-trip skips itself unless both
-  the `age` CLI and `ssh-keygen` are on `PATH`. Install `age` to run all 46. The vault's
-  encryption logic is covered either way by the non-skipped tests; only the live-CLI round-trip
-  is gated.
+- 56 tests across 12 test files on the fully provisioned reference machine. The real-`age`
+  Ed25519 round-trip skips itself when either the `age` CLI or `ssh-keygen` is unavailable; the
+  vault's encryption logic remains covered by the non-skipped tests.
 - `demo:verify` reports one lock winner and one correlation-bearing conflict.
 - The durable lease is present after a daemon restart.
 - The secret-backed child receives a runtime-random canary while MCP output contains `[REDACTED]`.
@@ -58,26 +58,26 @@ Timing and manifest hashes are measured, not hard-coded. The Item 11 reference r
 
 ## Run the local control plane
 
-Start AgentMesh with a single command:
+Start Belay with a single command:
 
 ```bash
 # Starts the control plane and automatically opens the Cockpit in your browser
 npm start
 # or using the CLI directly:
-npx agentmesh start --open
+npx belay start --open
 ```
 
 Initialize project configuration or run environment health diagnostics:
 
 ```bash
-# Initialize .agentmesh/config.json and git protections in your project
+# Initialize .belay/config.json and git protections in your project
 npm run init
 
 # Run system doctor to verify Node version, ports, age CLI, and cloud connectivity
 npm run doctor
 ```
 
-Open `http://127.0.0.1:3420/` for the cockpit. Connect MCP clients to `http://127.0.0.1:3420/mcp` (or click **"Connect Agents"** in the Cockpit for 1-click configuration snippets). AgentMesh is loopback-only and rejects forwarded routing headers.
+Open `http://127.0.0.1:3420/` for the cockpit. Connect MCP clients to `http://127.0.0.1:3420/mcp` (or click **"Connect Agents"** in the Cockpit for 1-click configuration snippets). Belay is loopback-only and rejects forwarded routing headers.
 
 ### Seed a realistic cockpit for review
 
@@ -98,20 +98,20 @@ them is the human authority step, and doing it yourself is the point.
 
 ### Custom configuration (Optional)
 
-You can customize parameters via `.agentmesh/config.json`, CLI flags, or environment variables:
+You can customize parameters via `.belay/config.json`, CLI flags, or environment variables:
 
 ```json
-// .agentmesh/config.json
+// .belay/config.json
 {
   "port": 3420,
-  "workspaceName": "agentmesh-suite",
-  "stateDirectory": "~/.agentmesh"
+  "workspaceName": "belay-suite",
+  "stateDirectory": "~/.belay"
 }
 ```
 
 ```powershell
 # PowerShell with custom flags:
-npx agentmesh start -p 3420 -w "agentmesh-suite" --open
+npx belay start -p 3420 -w "belay-suite" --open
 ```
 
 Create the safe disposable approval card from another terminal:
@@ -148,7 +148,7 @@ Every failure response uses a stable code plus a correlation identifier. Tool re
 Point the daemon at the `age` binary when it is not on `PATH`:
 
 ```powershell
-$env:AGENTMESH_AGE_BIN = "C:\path\to\age.exe"
+$env:BELAY_AGE_BIN = "C:\path\to\age.exe"
 ```
 
 The vault envelope stores AES-GCM ciphertext, nonce/tag, non-secret schema binding, and an `age`-wrapped 32-byte DEK. Unlock requires a readable supported SSH identity file. The current adapter intentionally does not use `ssh-agent`, and no MCP or REST contract can retrieve a secret value.
@@ -158,13 +158,15 @@ The vault envelope stores AES-GCM ciphertext, nonce/tag, non-secret schema bindi
 Set the private service URL before starting the daemon:
 
 ```powershell
-$env:AGENTMESH_CLOUD_URL = "https://agentmesh-intelligence-<project-number>.us-central1.run.app"
+$env:BELAY_CLOUD_URL = "https://belay-intelligence-<project-number>.us-central1.run.app"
 npm run start
 ```
 
-The local `GoogleAuth` client obtains an audience ID token through Application Default Credentials. Cloud requests contain bounded framework/script/port/topology metadata or high-level audit events only. The local egress guard rejects raw source fields, unknown keys, private-key markers, connection strings, bearer tokens, sensitive paths, known secrets and approved encodings, and oversized payloads before network activity.
+The local `GoogleAuth` client obtains an audience ID token through Application Default Credentials. Cloud requests contain a bounded high-level goal plus framework/AST-topology metadata, or sanitized audit/lock metadata. The local egress guard rejects raw source fields, unknown keys, private-key markers, connection strings, bearer tokens, sensitive paths, known secrets and approved encodings, and oversized payloads before network activity.
 
-Deployment is reproducible through [`scripts/deploy-cloud.ps1`](scripts/deploy-cloud.ps1). It generates and verifies a temporary 19-file allowlisted context rather than uploading the repository. See [Cloud Run evidence](docs/hackathon-build/cloud-run-evidence.md).
+Studio’s **Plan with Gemini** mode calls `POST /v1/decompose-fleet-task` on the private Cloud Run service. A Genkit structured-output flow returns a bounded plan for Claude Code, Codex, and Antigravity, including dependency order, acceptance criteria, risk labels, and repository-relative lease paths. Both Cloud Run and the local daemon validate the result; invented agents or paths fail closed. **Reserve fleet leases** stages the exact cached plan in one outer SQLite transaction, so one conflict rolls back the entire plan before any agent prompt is dispatched.
+
+Deployment is reproducible through [`scripts/deploy-cloud.ps1`](scripts/deploy-cloud.ps1). It generates and verifies a temporary 21-file allowlisted context rather than uploading the repository. See [Cloud Run evidence](docs/hackathon-build/cloud-run-evidence.md).
 
 ## Architecture and security
 

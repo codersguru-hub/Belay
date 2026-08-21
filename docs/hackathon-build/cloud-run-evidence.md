@@ -1,13 +1,29 @@
-# AgentMesh Cloud Run Evidence
+# Belay Cloud Run Evidence
+
+## 2026-08-20 fleet-intelligence deployment
+
+- Implemented private `POST /v1/decompose-fleet-task` in the Genkit TypeScript service.
+- Added a structured Gemini 3.6 Flash output contract for Claude Code, Codex, and Antigravity task assignment, dependency order, acceptance criteria, risk labels, and repository-relative lease paths.
+- Added local and server-side validation that rejects invented agents, invented paths, unknown fields, secrets, raw-source fields, and oversized payloads.
+- Verified the updated minimal deployment context locally: exactly 21 allowlisted files; no daemon/dashboard implementation, tests, docs, state, vaults, keys, databases, logs, or credentials.
+- Local verification: workspace build passed, full regression passed 55/55, and the no-leak/security subset passed 20/20.
+- Google Cloud project: `belay-505611`; region: `us-central1`; service: `belay-intelligence`.
+- Ready revision: `belay-intelligence-00004-lnd`, serving 100% of traffic.
+- Successful regional Cloud Build: `44ee6830-8e2b-4b0c-be2f-7ad20204a21d`.
+- Authenticated manifest summary smoke: request `92e83e9f-1a9b-4aef-805f-05c529258c84`, model `gemini-3.6-flash`, risk `low`.
+- Authenticated fleet decomposition smoke: request `6afbcd8c-1ec7-40ed-9508-d19077e2b570`, plan `c55524ed-2dda-44c0-8945-b99ff0233be2`, model `gemini-3.6-flash`, three structured tasks.
+- Cloud Run emitted `gemini_fleet_plan_completed` with the matching request/plan IDs and task count at `2026-08-20T08:59:24.338729Z`.
+- Service IAM grants `roles/run.invoker` only to the authenticated participant account; there is no `allUsers` or `allAuthenticatedUsers` binding. An unauthenticated fleet-endpoint POST returned HTTP `403`.
+- Two intermediate ready revisions exposed a Vertex structured-output compatibility issue during smoke verification. The generation schema was reduced to Vertex's supported subset while the strict shared Zod contract retained post-generation slug, enum, bounds, DAG, agent, and path validation. Neither intermediate revision is receiving traffic.
 
 Captured: 2026-08-15
 
 ## Successful private deployment
 
-- Google Cloud project: `agentmesh-505611`
+- Google Cloud project: `belay-505611`
 - Region: `us-central1`
-- Service: `agentmesh-intelligence`
-- Ready revision: `agentmesh-intelligence-00001-4nr`
+- Service: `belay-intelligence`
+- Ready revision: `belay-intelligence-00001-4nr`
 - Traffic: 100% to the ready revision
 - Runtime identity: a dedicated, non-default service account scoped to this service (address
   omitted here; it is not the Compute Engine default identity)

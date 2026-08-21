@@ -1,4 +1,4 @@
-# Four-minute AgentMesh demo script
+# Four-minute Belay demo script
 
 ## The Winning Demo Formula — video checklist
 
@@ -6,7 +6,7 @@ Judges evaluate submissions largely from the three-to-four-minute video. Use thi
 
 ### The Hook — 0:00–0:30
 
-**Narration:** “When you run Claude Code and Codex on the same project, two things happen: they burn 40,000 tokens rescanning static files, and they can easily leak your plaintext `.env` database secrets into prompt logs. We built AgentMesh—the local control plane that fixes this.”
+**Narration:** “When you run Claude Code and Codex on the same project, two things happen: they burn 40,000 tokens rescanning static files, and they can easily leak your plaintext `.env` database secrets into prompt logs. We built Belay—the local control plane that fixes this.”
 
 Keep the token figure only when the recording includes a measured before/after comparison. Otherwise say “tens of thousands of tokens” and show the actual benchmark output.
 
@@ -27,22 +27,24 @@ Keep the token figure only when the recording includes a measured before/after c
 ### The “Wow Moment” — Zero-Leak Intercept & Human Approval — 2:00–3:00
 
 - Have Claude request a protected staging deploy such as `pm2 reload` (the current built-in demo uses a safe local staging-reload simulation).
-- Show the AgentMesh cockpit’s amber approval card with masked environment variable names and the immutable SHA-256 action digest.
+- Show the Belay cockpit’s amber approval card with masked environment variable names and the immutable SHA-256 action digest.
 - Click **Approve** once and show the terminal outcome.
 - Run `npm run verify:no-leaks` to prove that the canary secret was not persisted in SQLite, logs, MCP output, dashboard responses, or cloud fixtures.
 - If the host denies the disposable child boundary, show the `indeterminate` fail-closed result; do not present it as a successful production SSH deployment.
 
-### Google Cloud Run & Gemini Privacy Egress — 3:00–3:45
+### Google Cloud Run & Gemini Fleet Intelligence — 3:00–3:45
 
-- Trigger a semantic summary through the private Cloud Run endpoint.
+- Enter “Refactor auth to RS256 and add rate limiting” in Studio with **Plan with Gemini** enabled.
+- Show the structured Claude/Codex/Antigravity task split, dependency order, risk labels, and assigned lease paths before any agent executes.
+- Click **Reserve fleet leases** and show the atomic SQLite-WAL reservation; explain that one conflict rolls the entire fleet plan back.
 - Show the Cloud Run revision and Gemini response/request evidence without exposing account identifiers, tokens, cookies, or local gcloud configuration.
 - Follow with the negative test showing raw source and known secrets are blocked locally before network transmission.
-- State that Gemini is advisory and that local coordination, vault policy, indexing, and approvals continue when cloud intelligence is unavailable.
+- State that Gemini is the Cloud Arbiter and fleet-planning intelligence, while local SQLite-WAL remains the enforcement authority; coordination, vault policy, indexing, and approvals continue when cloud intelligence is unavailable.
 
 ### Final proof — 3:45–4:00
 
 - Show the final verifier summary, architecture diagram, and repository README.
-- Close with: “AgentMesh is the local control plane for shared state, token-efficient context, safe execution, and human authority across heterogeneous coding agents.”
+- Close with: “Belay is the local control plane for shared state, token-efficient context, safe execution, and human authority across heterogeneous coding agents.”
 
 ## Before recording
 
@@ -53,9 +55,9 @@ Keep the token figure only when the recording includes a measured before/after c
 
 ## 0:00–0:25 — Problem and category
 
-**Visual:** AgentMesh cockpit overview.
+**Visual:** Belay cockpit overview.
 
-**Narration:** “Coding agents are independent operators. They rescan the same repository, collide on files, and ask for credentials through unsafe prompt-visible workflows. AgentMesh is not another orchestrator—it is the local control plane that gives those agents shared rails and a secure execution boundary.”
+**Narration:** “Coding agents are independent operators. They rescan the same repository, collide on files, and ask for credentials through unsafe prompt-visible workflows. Belay is not another orchestrator—it is the local control plane that gives those agents shared rails and a secure execution boundary.”
 
 ## 0:25–0:55 — Deterministic context
 
@@ -79,22 +81,22 @@ Keep the token figure only when the recording includes a measured before/after c
 
 ## 2:10–2:55 — Judge wow moment: approval intercept
 
-**Visual:** [`screenshots/agentmesh-cockpit-approval.png`](screenshots/agentmesh-cockpit-approval.png), then live cockpit if available.
+**Visual:** [`screenshots/belay-cockpit-approval.png`](screenshots/belay-cockpit-approval.png), then live cockpit if available.
 
-**Narration:** “Claude Code requests a protected staging reload. AgentMesh freezes the exact command, target, working directory, environment names, policy version, and expiry into one SHA-256 digest. Nothing executes while pending. One human decision authorizes that digest once; replay or mutation is rejected.”
+**Narration:** “Claude Code requests a protected staging reload. Belay freezes the exact command, target, working directory, environment names, policy version, and expiry into one SHA-256 digest. Nothing executes while pending. One human decision authorizes that digest once; replay or mutation is rejected.”
 
 Optional negative beat: show the fail-closed screenshot and explain that an ambiguous execution becomes `indeterminate` and never auto-retries.
 
-## 2:55–3:30 — Privacy-filtered Gemini on Cloud Run
+## 2:55–3:30 — Gemini Cloud Arbiter on Cloud Run
 
-**Visual:** Cloud Run ready revision and the sanitized smoke evidence; then the local forbidden-egress test.
+**Visual:** Studio’s `Plan with Gemini` mode produces a three-agent lease plan; then show the Cloud Run ready revision, sanitized request evidence, and local forbidden-egress test.
 
-**Narration:** “The cloud plane is private IAM. Only a verified 19-file cloud build context was uploaded. The runtime receives structural metadata through an exact schema, revalidates it, and returns a labeled Gemini summary. A raw-source or known-secret payload is rejected locally with zero network calls. If cloud intelligence is unavailable, all local controls stay active.”
+**Narration:** “Gemini is our Cloud Arbiter and Fleet Intelligence Engine. Before an agent executes, Genkit on private Cloud Run decomposes the goal across Claude, Codex, and Antigravity, assigning dependencies, risk, and required lease paths from sanitized AST topology. The local daemon rejects invented paths and SQLite-WAL still enforces every lease. Raw source or known secrets are blocked locally with zero network calls, and all local controls stay active if the cloud is unavailable.”
 
 ## 3:30–4:00 — Proof and vision
 
 **Visual:** Final verifier summary, architecture diagram, repository README.
 
-**Narration:** “AgentMesh proves the infrastructure layer: deterministic context, atomic coordination, secret-safe execution, and human authority across heterogeneous agents. The MVP is local-first and single-user; production SSH fleet adapters and team identity are intentionally next, not falsely claimed today.”
+**Narration:** “Belay proves the infrastructure layer: deterministic context, atomic coordination, secret-safe execution, and human authority across heterogeneous agents. The MVP is local-first and single-user; production SSH fleet adapters and team identity are intentionally next, not falsely claimed today.”
 
-End card: **AgentMesh — shared state, safe execution, human authority.**
+End card: **Belay — shared state, safe execution, human authority.**

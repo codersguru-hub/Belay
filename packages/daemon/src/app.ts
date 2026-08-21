@@ -7,10 +7,10 @@ import {
   type CoordinationServiceOptions
 } from "./coordination/coordination-service.js";
 import { LeaseReaper } from "./coordination/lease-reaper.js";
-import { loadConfig, type AgentMeshConfig } from "./config.js";
+import { loadConfig, type BelayConfig } from "./config.js";
 import { openStateDatabase } from "./db/connection.js";
 import { bootstrapProject } from "./db/repositories/project-repository.js";
-import { createAgentMeshMcpServer } from "./mcp/create-server.js";
+import { createBelayMcpServer } from "./mcp/create-server.js";
 import { ManifestService } from "./indexer/manifest-service.js";
 import { ManifestWatcher } from "./indexer/manifest-watcher.js";
 import { CommandExecutor } from "./executor/command-executor.js";
@@ -28,14 +28,15 @@ import { recoverAmbiguousApprovals } from "./db/repositories/approval-repository
 import { DashboardService } from "./dashboard/dashboard-service.js";
 import { CloudIntelligenceService } from "./cloud/cloud-intelligence-service.js";
 import { CloudRunSummaryAdapter } from "./cloud/cloud-run-adapter.js";
+import { StudioService } from "./studio/studio-service.js";
 import {
-  createAgentMeshHttpServer,
-  type AgentMeshHttpServer,
+  createBelayHttpServer,
+  type BelayHttpServer,
   type StartedHttpServer
 } from "./server/http-server.js";
 
-export interface AgentMeshApp {
-  readonly config: AgentMeshConfig;
+export interface BelayApp {
+  readonly config: BelayConfig;
   readonly database: Database.Database;
   readonly coordination: CoordinationService;
   readonly manifests: ManifestService;
@@ -43,13 +44,14 @@ export interface AgentMeshApp {
   readonly executor: CommandExecutor;
   readonly approvals: ApprovalService;
   readonly cloudIntelligence: CloudIntelligenceService;
+  readonly studio: StudioService;
   readonly dashboardSessionToken: string;
   start(): Promise<StartedHttpServer>;
   close(): Promise<void>;
 }
 
-export interface CreateAgentMeshAppOptions
-  extends Partial<Pick<AgentMeshConfig, "port" | "stateDirectory" | "projectRoot" | "cloudServiceUrl" | "workspaceName">>,
+export interface CreateBelayAppOptions
+  extends Partial<Pick<BelayConfig, "port" | "stateDirectory" | "projectRoot" | "cloudServiceUrl" | "workspaceName">>,
     CoordinationServiceOptions {
   leaseSweepIntervalMilliseconds?: number;
   keyWrapAdapter?: KeyWrapAdapter;
@@ -57,9 +59,9 @@ export interface CreateAgentMeshAppOptions
   commandTemplates?: readonly CommandTemplate[];
 }
 
-export function createAgentMeshApp(
-  options: CreateAgentMeshAppOptions = {}
-): AgentMeshApp {
+export function createBelayApp(
+  options: CreateBelayAppOptions = {}
+): BelayApp {
   const config = loadConfig(options);
   const { database } = openStateDatabase(config.databasePath);
   bootstrapProject(database, config.projectRoot, (options.now?.() ?? new Date()).toISOString(), config.workspaceName);
@@ -115,6 +117,14 @@ export function createAgentMeshApp(
     config.cloudServiceUrl ? new CloudRunSummaryAdapter(config.cloudServiceUrl) : undefined,
     { ...(options.now ? { now: options.now } : {}) }
   );
+  const studio = new StudioService(
+    database,
+    config.projectRoot,
+    executor,
+    approvals,
+    approvalEvents,
+    options.now
+  );
   const dashboardSessionToken = randomBytes(32).toString("base64url");
   const dashboard = new DashboardService(
     database,
@@ -127,11 +137,11 @@ export function createAgentMeshApp(
     options.now
   );
   const manifestWatcher = new ManifestWatcher(config.projectRoot, manifests);
-  const httpServer: AgentMeshHttpServer = createAgentMeshHttpServer({
+  const httpServer: BelayHttpServer = createBelayHttpServer({
     host: config.host,
     port: config.port,
     mcpServerFactory: () =>
-      createAgentMeshMcpServer(
+      createBelayMcpServer(
         coordination,
         manifests,
         approvals,
@@ -139,10 +149,12 @@ export function createAgentMeshApp(
         cloudIntelligence
       ),
     approvals,
+    coordination,
     cloudIntelligence,
     approvalEvents,
     dashboardSessionToken,
     dashboard,
+    studio,
     dashboardDirectory: resolve(dirname(fileURLToPath(import.meta.url)), "../../dashboard/dist")
   });
   let closed = false;
@@ -157,6 +169,7 @@ export function createAgentMeshApp(
     executor,
     approvals,
     cloudIntelligence,
+    studio,
     dashboardSessionToken,
     async start() {
       if (!started) {

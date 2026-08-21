@@ -3,7 +3,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 
 export const EXCLUDED_DIRECTORY_NAMES = new Set([
-  ".agentmesh",
+  ".belay",
   ".git",
   ".tools",
   ".next",
@@ -16,7 +16,7 @@ export const EXCLUDED_DIRECTORY_NAMES = new Set([
 
 function isExcludedDirectoryName(name: string): boolean {
   const lower = name.toLowerCase();
-  return EXCLUDED_DIRECTORY_NAMES.has(lower) || lower.startsWith(".agentmesh-");
+  return EXCLUDED_DIRECTORY_NAMES.has(lower) || lower.startsWith(".belay-");
 }
 
 const BINARY_EXTENSIONS = new Set([

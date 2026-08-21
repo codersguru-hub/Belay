@@ -1,4 +1,4 @@
-import { ReindexProjectInputSchema } from "@agentmesh/contracts";
+import { ReindexProjectInputSchema } from "@belay/contracts";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { ManifestService } from "../../indexer/manifest-service.js";
 import { failedToolResult, successfulToolResult } from "../tool-result.js";

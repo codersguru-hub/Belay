@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import type { EnvironmentSchemaV1 } from "@agentmesh/contracts";
+import type { EnvironmentSchemaV1 } from "@belay/contracts";
 import { afterEach, describe, expect, it } from "vitest";
-import { createAgentMeshApp, type AgentMeshApp } from "../packages/daemon/src/app.js";
+import { createBelayApp, type BelayApp } from "../packages/daemon/src/app.js";
 import type {
   CommandTemplate
 } from "../packages/daemon/src/executor/command-registry.js";
@@ -16,7 +16,7 @@ import type {
 
 const CANARY = "S3cret+/= value?&_9c17e45b2a";
 const cleanupDirectories: string[] = [];
-const cleanupApps: AgentMeshApp[] = [];
+const cleanupApps: BelayApp[] = [];
 
 class TestKeyWrapAdapter implements KeyWrapAdapter {
   private readonly key = createHash("sha256").update("executor-test-wrap").digest();
@@ -63,16 +63,16 @@ function template(
 }
 
 function fixture(): {
-  app: AgentMeshApp;
+  app: BelayApp;
   root: string;
   stateDirectory: string;
   vaultPath: string;
   schemaPath: string;
   markerPath: string;
 } {
-  const root = mkdtempSync(join(tmpdir(), "agentmesh-executor-"));
+  const root = mkdtempSync(join(tmpdir(), "belay-executor-"));
   cleanupDirectories.push(root);
-  const stateDirectory = join(root, ".agentmesh-state");
+  const stateDirectory = join(root, ".belay-state");
   const scriptPath = join(root, "command-fixture.mjs");
   const markerPath = join(root, "spawned.marker");
   mkdirSync(join(root, "nested"));
@@ -114,7 +114,7 @@ if (mode === "leak") {
     template("timeout-test", scriptPath, "timeout", { timeoutMilliseconds: 100 }),
     template("output-test", scriptPath, "output", { maxOutputBytes: 256 })
   ];
-  const app = createAgentMeshApp({
+  const app = createBelayApp({
     projectRoot: root,
     stateDirectory,
     keyWrapAdapter: new TestKeyWrapAdapter(),
@@ -133,7 +133,7 @@ if (mode === "leak") {
 
 function unlockCanaryVault(f: ReturnType<typeof fixture>): void {
   const schema: EnvironmentSchemaV1 = {
-    format: "agentmesh-env-schema",
+    format: "belay-env-schema",
     version: 1,
     profile: "test",
     variables: [{ name: "DB_PASSWORD", required: true, description: "test secret" }]

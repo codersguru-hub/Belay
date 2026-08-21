@@ -12,7 +12,7 @@
 ## Trust assumptions
 
 - The developer account and operating system are trusted.
-- The AgentMesh daemon process is trusted and binds only to loopback.
+- The Belay daemon process is trusted and binds only to loopback.
 - Coding agents, their prompts, and tool inputs are untrusted with respect to secrets and mutation.
 - The local cockpit is a privileged decision surface but must remain secret-free.
 - Cloud Run and Gemini are permitted to receive only the explicit structural/audit schema.
@@ -52,7 +52,7 @@
 
 ## Platform limitations
 
-- JavaScript strings and runtime internals cannot be guaranteed to zeroize. AgentMesh minimizes copies, keeps values short-lived, and overwrites owned buffers best-effort.
+- JavaScript strings and runtime internals cannot be guaranteed to zeroize. Belay minimizes copies, keeps values short-lived, and overwrites owned buffers best-effort.
 - POSIX vault artifacts are written with mode `0600`. Windows security relies on the containing directory's ACL because Node mode bits do not replace inherited ACLs.
 - If a command crosses the execution boundary but its terminal result cannot be proven, the approval is `indeterminate` and never auto-retried.
 

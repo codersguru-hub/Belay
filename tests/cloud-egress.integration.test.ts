@@ -5,11 +5,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import type {
   CloudSummaryRequestV1,
   CloudSummaryResponse
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import { openStateDatabase } from "../packages/daemon/src/db/connection.js";
 import { bootstrapProject } from "../packages/daemon/src/db/repositories/project-repository.js";
 import { ManifestService } from "../packages/daemon/src/indexer/manifest-service.js";
 import { CloudIntelligenceService } from "../packages/daemon/src/cloud/cloud-intelligence-service.js";
+import { CoordinationService } from "../packages/daemon/src/coordination/coordination-service.js";
 import type { CloudSummaryAdapter } from "../packages/daemon/src/cloud/cloud-run-adapter.js";
 import {
   EgressGuard,
@@ -51,7 +52,9 @@ describe("cloud egress privacy boundary", () => {
       ports: 1,
       topology: 1,
       audit: 0,
-      conflictHeldPaths: 0
+      conflictHeldPaths: 0,
+      fleetCandidatePaths: 0,
+      fleetAgents: 0
     });
   });
 
@@ -133,7 +136,7 @@ describe("cloud egress privacy boundary", () => {
   });
 
   it("blocks known secret values and approved encodings before network", () => {
-    const canary = "AGENTMESH-CLOUD-CANARY-8d7e9f";
+    const canary = "BELAY-CLOUD-CANARY-8d7e9f";
     const variants = [
       canary,
       Buffer.from(canary).toString("base64"),
@@ -148,7 +151,7 @@ describe("cloud egress privacy boundary", () => {
   });
 
   it("sends only aliases, paths, and symbol kinds when adjudicating a lock conflict", async () => {
-    const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-conflict-"));
+    const stateDirectory = mkdtempSync(join(tmpdir(), "belay-conflict-"));
     temporaryDirectories.push(stateDirectory);
     const projectRoot = resolve("tests/fixtures/demo-repo");
     const { database } = openStateDatabase(join(stateDirectory, "state.db"));
@@ -197,8 +200,134 @@ describe("cloud egress privacy boundary", () => {
     database.close();
   });
 
+  it("lets Gemini decompose a high-level goal using only bounded manifest topology", async () => {
+    const stateDirectory = mkdtempSync(join(tmpdir(), "belay-fleet-plan-"));
+    temporaryDirectories.push(stateDirectory);
+    const projectRoot = resolve("tests/fixtures/demo-repo");
+    const { database } = openStateDatabase(join(stateDirectory, "state.db"));
+    bootstrapProject(database, projectRoot);
+    const manifests = new ManifestService(database);
+    manifests.indexProject(projectRoot);
+    const vault = {
+      status: () => ({ state: "unconfigured", variableNames: [] })
+    } as unknown as VaultService;
+
+    let sent: CloudSummaryRequestV1 | import("@belay/contracts").FleetTaskDecompositionRequestV1 | undefined;
+    const requestId = "323e4567-e89b-42d3-a456-426614174000";
+    const adapter: CloudSummaryAdapter = {
+      provider: "mock-cloud-run",
+      async summarize() { throw new Error("not used"); },
+      async decomposeFleetTask(payload, options) {
+        sent = payload;
+        const candidatePaths = payload.manifest.candidatePaths.map((entry) => entry.path);
+        return {
+          requestId: options.requestId,
+          planId: "423e4567-e89b-42d3-a456-426614174000",
+          model: "gemini-3.6-flash",
+          goalSummary: "Split the auth hardening across implementation, review, and integration.",
+          tasks: [
+            {
+              taskId: "implement-auth-hardening",
+              title: "Implement auth hardening",
+              assignedAgent: "codex",
+              leasePaths: [candidatePaths[0]!],
+              dependsOn: [],
+              acceptanceCriteria: ["Auth changes pass focused tests"],
+              riskLevel: "medium"
+            }
+          ],
+          generatedAt: "2026-08-20T12:00:00.000Z"
+        };
+      }
+    };
+    const service = new CloudIntelligenceService(
+      database,
+      manifests,
+      vault,
+      projectRoot,
+      adapter,
+      { createRequestId: () => requestId }
+    );
+
+    const plan = await service.decomposeFleetTask(
+      "Refactor auth to RS256 and add rate limiting before agents execute."
+    );
+    expect(plan.tasks[0]?.assignedAgent).toBe("codex");
+    expect(sent?.kind).toBe("fleet_task_decomposition");
+    expect(sent && "goal" in sent ? sent.goal : "").toContain("RS256");
+    expect(Object.keys(sent ?? {}).sort()).toEqual([
+      "agents",
+      "goal",
+      "kind",
+      "manifest",
+      "projectAlias",
+      "version"
+    ]);
+    expect(JSON.stringify(sent)).not.toContain("export const");
+    const row = database
+      .prepare("SELECT kind, payload_hash, field_counts_json FROM cloud_summary_requests WHERE id = ?")
+      .get(requestId) as Record<string, string>;
+    expect(row.kind).toBe("fleet_task_decomposition");
+    expect(row.payload_hash).toMatch(/^[a-f0-9]{64}$/u);
+    expect(JSON.parse(row.field_counts_json)).toMatchObject({ fleetAgents: 3 });
+    expect(service.fleetTaskPlan(plan.planId)).toEqual(plan);
+    const staged = new CoordinationService(database).stageFleetTaskPlan({
+      projectRoot,
+      plan,
+      leaseSeconds: 900
+    });
+    expect(staged.tasks).toHaveLength(1);
+    expect(staged.tasks[0]).toMatchObject({
+      agentName: "codex",
+      lockedFiles: plan.tasks[0]?.leasePaths
+    });
+
+    const fleetRequest = sent?.kind === "fleet_task_decomposition" ? sent : undefined;
+    const firstFreePath = fleetRequest?.manifest.candidatePaths.find(
+      (entry) => !plan.tasks[0]?.leasePaths.includes(entry.path)
+    )?.path;
+    expect(firstFreePath).toBeTruthy();
+    const conflictingPlan: import("@belay/contracts").FleetTaskPlanResponse = {
+      requestId: "523e4567-e89b-42d3-a456-426614174000",
+      planId: "623e4567-e89b-42d3-a456-426614174000",
+      model: "gemini-3.6-flash",
+      goalSummary: "Atomic conflict fixture",
+      tasks: [
+        {
+          taskId: "free-first",
+          title: "Acquire the initially free path",
+          assignedAgent: "claude-code",
+          leasePaths: [firstFreePath!],
+          dependsOn: [],
+          acceptanceCriteria: ["Lease is held only if the full plan succeeds"],
+          riskLevel: "low"
+        },
+        {
+          taskId: "conflict-second",
+          title: "Collide with the prior fleet plan",
+          assignedAgent: "antigravity",
+          leasePaths: [plan.tasks[0]!.leasePaths[0]!],
+          dependsOn: [],
+          acceptanceCriteria: ["Conflict rolls back every task in this plan"],
+          riskLevel: "medium"
+        }
+      ],
+      generatedAt: "2026-08-20T12:05:00.000Z"
+    };
+    expect(() => new CoordinationService(database).stageFleetTaskPlan({
+      projectRoot,
+      plan: conflictingPlan,
+      leaseSeconds: 900
+    })).toThrow();
+    const rolledBack = database
+      .prepare("SELECT count(*) AS count FROM tasks WHERE id LIKE ?")
+      .get(`gemini:${conflictingPlan.planId}:%`) as { count: number };
+    expect(rolledBack.count).toBe(0);
+    database.close();
+  });
+
   it("records metadata-only success and leaves local state usable on cloud failure", async () => {
-    const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-cloud-"));
+    const stateDirectory = mkdtempSync(join(tmpdir(), "belay-cloud-"));
     temporaryDirectories.push(stateDirectory);
     const projectRoot = resolve("tests/fixtures/demo-repo");
     const { database } = openStateDatabase(join(stateDirectory, "state.db"));

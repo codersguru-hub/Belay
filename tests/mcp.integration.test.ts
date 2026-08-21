@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { afterEach, describe, expect, it } from "vitest";
-import { createAgentMeshApp, type AgentMeshApp } from "../packages/daemon/src/app.js";
+import { createBelayApp, type BelayApp } from "../packages/daemon/src/app.js";
 
 interface ConnectedClient {
   client: Client;
@@ -12,7 +12,7 @@ interface ConnectedClient {
 
 const cleanupDirectories: string[] = [];
 const cleanupClients: ConnectedClient[] = [];
-const cleanupApps: AgentMeshApp[] = [];
+const cleanupApps: BelayApp[] = [];
 
 async function connectClient(url: string, name: string): Promise<ConnectedClient> {
   const client = new Client({ name, version: "0.1.0" });
@@ -49,11 +49,11 @@ afterEach(async () => {
 
 describe("mcp streamable http coordination", () => {
   it("coordinates two independent MCP sessions with exactly one overlap winner", async () => {
-    const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-mcp-"));
+    const stateDirectory = mkdtempSync(join(tmpdir(), "belay-mcp-"));
     cleanupDirectories.push(stateDirectory);
     const projectRoot = join(stateDirectory, "demo-repo");
     mkdirSync(projectRoot);
-    const app = createAgentMeshApp({ stateDirectory, projectRoot, port: 0 });
+    const app = createBelayApp({ stateDirectory, projectRoot, port: 0 });
     cleanupApps.push(app);
     const endpoint = await app.start();
 
@@ -226,11 +226,11 @@ describe("mcp streamable http coordination", () => {
   });
 
   it("shares checklist dependencies, progress, blockers, and verification across clients", async () => {
-    const stateDirectory = mkdtempSync(join(tmpdir(), "agentmesh-workflow-"));
+    const stateDirectory = mkdtempSync(join(tmpdir(), "belay-workflow-"));
     cleanupDirectories.push(stateDirectory);
     const projectRoot = join(stateDirectory, "demo-repo");
     mkdirSync(projectRoot);
-    const app = createAgentMeshApp({ stateDirectory, projectRoot, port: 0 });
+    const app = createBelayApp({ stateDirectory, projectRoot, port: 0 });
     cleanupApps.push(app);
     const endpoint = await app.start();
     const codex = await connectClient(endpoint.mcpUrl, "codex-workflow-client");

@@ -1,8 +1,8 @@
 import { existsSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import type { CommandPolicyClass } from "@agentmesh/contracts";
+import type { CommandPolicyClass } from "@belay/contracts";
 
-export type CommandArgumentMode = "none" | "safe_tokens" | "repository_paths";
+export type CommandArgumentMode = "none" | "safe_tokens" | "repository_paths" | "prompt_stdin";
 
 export interface CommandTemplate {
   id: string;
@@ -208,7 +208,7 @@ export class CommandRegistry {
       }
       return [];
     }
-    if (mode === "safe_tokens") {
+    if (mode === "safe_tokens" || mode === "prompt_stdin") {
       if (
         requestedArguments.some(
           (argument) =>
@@ -279,6 +279,102 @@ export function defaultCommandTemplates(): CommandTemplate[] {
       approvalTtlMilliseconds: 5 * 60 * 1000,
       timeoutMilliseconds: 5_000,
       maxOutputBytes: 4_096
+    },
+    {
+      // Placeholder for the "team" (multi-agent orchestration) target only. Real single-agent
+      // dispatch uses the claude-dispatch / codex-dispatch / antigravity-dispatch templates below.
+      id: "agent-dispatch",
+      executable: process.execPath,
+      displayExecutable: "node",
+      fixedArguments: [
+        "-e",
+        "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>process.stdout.write(JSON.stringify({ok:true,receivedBytes:d.length})+'\\n'));"
+      ],
+      argumentMode: "prompt_stdin",
+      minimumArguments: 0,
+      maximumArguments: 4,
+      defaultWorkingDirectory: ".",
+      allowedWorkingDirectories: ["."],
+      environmentVariableNames: [],
+      inheritedEnvironmentVariableNames: [],
+      policyClass: "auto_allow",
+      timeoutMilliseconds: 60_000,
+      maxOutputBytes: 1024 * 1024
+    },
+    {
+      // Claude Code CLI, non-interactive "print mode". The prompt is delivered over stdin
+      // (no positional prompt argument), so no free-form text ever enters argv.
+      // --dangerously-skip-permissions is required for headless execution: with no TTY attached,
+      // Claude Code's normal per-tool confirmation prompts would otherwise hang forever waiting
+      // for a keypress that can never arrive. The human approval gate in front of this template
+      // (policyClass: "approval_required") is what replaces that in-CLI confirmation.
+      // Flag names are current as of Claude Code's documented non-interactive usage; verify
+      // against the CLI version actually installed on the VPS before relying on this in production.
+      id: "claude-dispatch",
+      executable: "claude",
+      displayExecutable: "claude",
+      fixedArguments: ["-p", "--output-format", "json", "--dangerously-skip-permissions"],
+      argumentMode: "prompt_stdin",
+      minimumArguments: 0,
+      maximumArguments: 0,
+      defaultWorkingDirectory: ".",
+      allowedWorkingDirectories: ["."],
+      environmentVariableNames: [],
+      inheritedEnvironmentVariableNames: ["PATH", "HOME"],
+      policyClass: "approval_required",
+      targetAlias: "claude-code-cli",
+      policyReason: "Runs the Claude Code CLI against the project working tree: it can read, write, and execute anything the daemon's account can reach.",
+      policyVersion: "local-policy-v1",
+      approvalTtlMilliseconds: 10 * 60 * 1000,
+      timeoutMilliseconds: 10 * 60 * 1000,
+      maxOutputBytes: 2 * 1024 * 1024
+    },
+    {
+      // OpenAI Codex CLI, non-interactive "exec" mode. Prompt delivered over stdin.
+      // Flags verified against `codex exec --help` on the deployed VPS (codex-cli 0.147.0):
+      // --json and --skip-git-repo-check are correct as named. --dangerously-bypass-approvals-and-sandbox
+      // is required in headless mode — without it, exec pauses for tool approval with no TTY to answer,
+      // and the dispatch hangs until timeoutMilliseconds. Re-verify if the installed CLI version changes;
+      // a wrong flag name fails the spawn visibly rather than misbehaving silently.
+      id: "codex-dispatch",
+      executable: "codex",
+      displayExecutable: "codex",
+      fixedArguments: ["exec", "--json", "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox"],
+      argumentMode: "prompt_stdin",
+      minimumArguments: 0,
+      maximumArguments: 0,
+      defaultWorkingDirectory: ".",
+      allowedWorkingDirectories: ["."],
+      environmentVariableNames: [],
+      inheritedEnvironmentVariableNames: ["PATH", "HOME"],
+      policyClass: "approval_required",
+      targetAlias: "openai-codex-cli",
+      policyReason: "Runs the OpenAI Codex CLI against the project working tree: it can read, write, and execute anything the daemon's account can reach.",
+      policyVersion: "local-policy-v1",
+      approvalTtlMilliseconds: 10 * 60 * 1000,
+      timeoutMilliseconds: 10 * 60 * 1000,
+      maxOutputBytes: 2 * 1024 * 1024
+    },
+    {
+      // Antigravity CLI (`agy`), non-interactive prompt dispatch. Prompt delivered over stdin.
+      id: "antigravity-dispatch",
+      executable: "agy",
+      displayExecutable: "agy",
+      fixedArguments: [],
+      argumentMode: "prompt_stdin",
+      minimumArguments: 0,
+      maximumArguments: 0,
+      defaultWorkingDirectory: ".",
+      allowedWorkingDirectories: ["."],
+      environmentVariableNames: [],
+      inheritedEnvironmentVariableNames: ["PATH", "HOME"],
+      policyClass: "approval_required",
+      targetAlias: "antigravity-cli",
+      policyReason: "Runs the Antigravity CLI (agy) against the project working tree: it can read, write, and execute anything the daemon's account can reach.",
+      policyVersion: "local-policy-v1",
+      approvalTtlMilliseconds: 10 * 60 * 1000,
+      timeoutMilliseconds: 10 * 60 * 1000,
+      maxOutputBytes: 2 * 1024 * 1024
     }
   ];
 }

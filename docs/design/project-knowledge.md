@@ -49,7 +49,7 @@ Three structural mismatches:
    `correlation_id`, and the `action_type` enum all describe *an event*. A
    topology fact has none of them.
 3. **Scoped to one project root.** `project_id` is FK'd to `projects`, and the
-   daemon is rooted at a single `AGENTMESH_PROJECT_ROOT`. The motivating fact
+   daemon is rooted at a single `BELAY_PROJECT_ROOT`. The motivating fact
    **spans three repositories**. It is not expressible in the current schema at
    any severity of hack.
 
@@ -129,7 +129,7 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_active
 
 ## Writes go through the existing approval gate
 
-This is the part that fits AgentMesh rather than bolting onto it.
+This is the part that fits Belay rather than bolting onto it.
 
 A row in `project_knowledge` is a mutation of **shared truth that every other
 agent will subsequently trust**. If the 2026-08-16 agent could have written
@@ -208,9 +208,9 @@ anything written fresh against the schema.
 
 1. **Workspace definition is explicit.** A canonical root is isolated by default;
    repositories share workspace facts only when bootstrapped in the same state
-   database with the same `AGENTMESH_WORKSPACE` value. Git remotes are not treated as identity.
+   database with the same `BELAY_WORKSPACE` value. Git remotes are not treated as identity.
 2. **`AGENTS.md` remains an offline instruction source.** Generation from the
-   database is deferred; AgentMesh does not silently rewrite repository policy files.
+   database is deferred; Belay does not silently rewrite repository policy files.
 3. **Staleness verification is deferred.** Provenance and supersession ship now;
    executable assertions can be added only with a separately reviewed command model.
 4. **Conflicts fail at proposal time.** An active fact with the same scope, kind,

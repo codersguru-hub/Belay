@@ -1,4 +1,4 @@
-import { BlockTaskInputSchema } from "@agentmesh/contracts";
+import { BlockTaskInputSchema } from "@belay/contracts";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { CoordinationService } from "../../coordination/coordination-service.js";
 import { failedToolResult, successfulToolResult } from "../tool-result.js";

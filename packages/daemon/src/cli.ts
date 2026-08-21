@@ -4,7 +4,7 @@ import { createServer } from "node:net";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { createAgentMeshApp } from "./app.js";
+import { createBelayApp } from "./app.js";
 import { loadConfig } from "./config.js";
 
 function openBrowser(url: string): void {
@@ -44,14 +44,15 @@ async function checkDaemonHealthy(url: string): Promise<boolean> {
 
 function printHelp(): void {
   process.stdout.write(`
-AgentMesh — Local-First Control Plane for Multi-Agent Coding
+Belay — Local-First Control Plane for Multi-Agent Coding Fleets
 
 Usage:
-  agentmesh [command] [options]
+  belay [command] [options]
+  belay  [command] [options] (compatibility alias)
 
 Commands:
-  start          Start the AgentMesh daemon and cockpit (default)
-  init           Initialize .agentmesh configuration in current project
+  start          Start the Belay daemon and cockpit (default)
+  init           Initialize .belay configuration in current project
   setup          Automatically configure Claude Desktop on this machine
   doctor         Run system diagnostics and check environment health
   stdio          Run standard I/O MCP bridge for Claude Desktop / stdio clients
@@ -61,20 +62,20 @@ Commands:
 Options for 'start':
   -p, --port <port>          Port to listen on (default: 3420)
   -r, --project-root <path>  Target project directory (default: current directory)
-  -s, --state-dir <path>     Directory for SQLite state database (default: ~/.agentmesh)
+  -s, --state-dir <path>     Directory for SQLite state database (default: ~/.belay)
   -w, --workspace <name>     Shared workspace name for multi-repo fact sharing
   -c, --cloud-url <url>      Cloud Run intelligence service URL
   -o, --open                 Automatically open the Cockpit UI in default browser
   -h, --help                 Show help for start command
 
 Options for 'stdio':
-  -u, --url <url>            Target AgentMesh daemon MCP URL (default: http://127.0.0.1:3420/mcp)
+  -u, --url <url>            Target Belay daemon MCP URL (default: http://127.0.0.1:3420/mcp)
 
 Examples:
-  npx agentmesh start --open
-  npx agentmesh init
-  npx agentmesh stdio
-  npx agentmesh doctor
+  npx belay start --open
+  npx belay init
+  npx belay stdio
+  npx belay doctor
 `);
 }
 
@@ -109,7 +110,7 @@ async function runStart(rawArgs: string[]): Promise<void> {
     ...(parsed.values["cloud-url"] ? { cloudServiceUrl: parsed.values["cloud-url"] as string } : {})
   };
 
-  const app = createAgentMeshApp(overrides);
+  const app = createBelayApp(overrides);
   const endpoint = await app.start();
 
   const isCloudConfigured = Boolean(app.config.cloudServiceUrl);
@@ -117,7 +118,7 @@ async function runStart(rawArgs: string[]): Promise<void> {
 
   process.stdout.write(`
 ===================================================================
-  AgentMesh Control Plane (v0.1.0)
+  Belay Control Plane (v0.1.0)
   Local-First Multi-Agent Coordination & Secret Boundary
 ===================================================================
   * Cockpit UI:     ${cockpitUrl}
@@ -142,10 +143,10 @@ async function runStart(rawArgs: string[]): Promise<void> {
       return;
     }
     shuttingDown = true;
-    process.stdout.write("\nStopping AgentMesh daemon...\n");
+    process.stdout.write("\nStopping Belay daemon...\n");
     try {
       await app.close();
-      process.stdout.write("AgentMesh daemon stopped cleanly.\n");
+      process.stdout.write("Belay daemon stopped cleanly.\n");
     } catch (err) {
       process.stderr.write(`Error during shutdown: ${err instanceof Error ? err.message : String(err)}\n`);
     }
@@ -161,42 +162,42 @@ async function runStart(rawArgs: string[]): Promise<void> {
 
 async function runInit(): Promise<void> {
   const projectRoot = resolve(process.cwd());
-  const agentMeshDir = resolve(projectRoot, ".agentmesh");
-  const configFile = resolve(agentMeshDir, "config.json");
+  const belayDir = resolve(projectRoot, ".belay");
+  const configFile = resolve(belayDir, "config.json");
   const gitignoreFile = resolve(projectRoot, ".gitignore");
 
-  process.stdout.write(`Initializing AgentMesh in ${projectRoot}...\n\n`);
+  process.stdout.write(`Initializing Belay in ${projectRoot}...\n\n`);
 
-  if (!existsSync(agentMeshDir)) {
-    mkdirSync(agentMeshDir, { recursive: true });
-    process.stdout.write(" [OK] Created .agentmesh directory\n");
+  if (!existsSync(belayDir)) {
+    mkdirSync(belayDir, { recursive: true });
+    process.stdout.write(" [OK] Created .belay directory\n");
   } else {
-    process.stdout.write(" [i] Found existing .agentmesh directory\n");
+    process.stdout.write(" [i] Found existing .belay directory\n");
   }
 
   if (!existsSync(configFile)) {
     const defaultConfig = {
       port: 3420,
-      workspaceName: "agentmesh-suite"
+      workspaceName: "belay-suite"
     };
     writeFileSync(configFile, `${JSON.stringify(defaultConfig, null, 2)}\n`, "utf8");
-    process.stdout.write(" [OK] Created .agentmesh/config.json\n");
+    process.stdout.write(" [OK] Created .belay/config.json\n");
   } else {
-    process.stdout.write(" [i] .agentmesh/config.json already exists\n");
+    process.stdout.write(" [i] .belay/config.json already exists\n");
   }
 
   // Ensure .gitignore ignores SQLite WAL and vault files if git is used
   if (existsSync(gitignoreFile)) {
     const gitignoreContent = readFileSync(gitignoreFile, "utf8");
-    const requiredPatterns = [".agentmesh/state.db*", ".agentmesh/*.vault", ".agentmesh-state/"];
+    const requiredPatterns = [".belay/state.db*", ".belay/*.vault", ".belay-state/"];
     const missingPatterns = requiredPatterns.filter((p) => !gitignoreContent.includes(p));
 
     if (missingPatterns.length > 0) {
-      const appendBlock = `\n# AgentMesh local state & encrypted secrets\n${missingPatterns.join("\n")}\n`;
+      const appendBlock = `\n# Belay local state & encrypted secrets\n${missingPatterns.join("\n")}\n`;
       writeFileSync(gitignoreFile, `${gitignoreContent.trimEnd()}${appendBlock}`, "utf8");
       process.stdout.write(" [OK] Updated .gitignore with local state and vault protections\n");
     } else {
-      process.stdout.write(" [OK] .gitignore already contains AgentMesh security rules\n");
+      process.stdout.write(" [OK] .gitignore already contains Belay security rules\n");
     }
   }
 
@@ -206,12 +207,12 @@ Initialization complete!
 Connect your AI coding agents:
 -------------------------------------------------------------------
 1. Claude Code:
-   claude mcp add agentmesh http://127.0.0.1:3420/mcp
+   claude mcp add --transport http belay http://127.0.0.1:3420/mcp
 
 2. OpenAI Codex / VS Code / Gemini Settings:
    {
      "mcpServers": {
-       "agentmesh": {
+       "belay": {
          "url": "http://127.0.0.1:3420/mcp"
        }
      }
@@ -221,12 +222,12 @@ Connect your AI coding agents:
    Add "http://127.0.0.1:3420/mcp" in MCP Servers panel.
 
 Start the daemon:
-   npx agentmesh start --open
+   npx belay start --open
 `);
 }
 
 async function runDoctor(): Promise<void> {
-  process.stdout.write("\nRunning AgentMesh System Doctor...\n\n");
+  process.stdout.write("\nRunning Belay System Doctor...\n\n");
 
   // 1. Node.js Version Check
   const nodeMajor = Number.parseInt(process.versions.node.split(".")[0] ?? "0", 10);
@@ -244,7 +245,7 @@ async function runDoctor(): Promise<void> {
   // 3. Port & Daemon Running Check
   const isHealthy = await checkDaemonHealthy(`http://127.0.0.1:${config.port}`);
   if (isHealthy) {
-    process.stdout.write(` [INFO] AgentMesh daemon is ACTIVE and healthy on http://127.0.0.1:${config.port}\n`);
+    process.stdout.write(` [INFO] Belay daemon is ACTIVE and healthy on http://127.0.0.1:${config.port}\n`);
   } else {
     const isPortFree = await checkPortAvailable(config.port, config.host);
     if (isPortFree) {
@@ -255,7 +256,7 @@ async function runDoctor(): Promise<void> {
   }
 
   // 4. Age CLI Check
-  const ageBinary = config.ageBinaryPath ?? process.env.AGENTMESH_AGE_BIN ?? "age";
+  const ageBinary = config.ageBinaryPath ?? process.env.BELAY_AGE_BIN ?? "age";
   try {
     const res = spawnSync(ageBinary, ["--version"], { encoding: "utf8" });
     if (res.status === 0 && res.stdout) {
@@ -289,7 +290,7 @@ async function runStdio(rawArgs: string[]): Promise<void> {
   });
 
   const config = loadConfig();
-  const mcpUrl = (parsed.values.url as string) ?? process.env.AGENTMESH_MCP_URL ?? `http://127.0.0.1:${config.port}/mcp`;
+  const mcpUrl = (parsed.values.url as string) ?? process.env.BELAY_MCP_URL ?? `http://127.0.0.1:${config.port}/mcp`;
 
   const { StdioServerTransport } = await import("@modelcontextprotocol/server/stdio");
   let sessionId: string | null = null;
@@ -358,7 +359,7 @@ async function runStdio(rawArgs: string[]): Promise<void> {
             jsonrpc: "2.0",
             error: {
               code: -32000,
-              message: `AgentMesh HTTP ${response.status}: ${errText}`
+              message: `Belay HTTP ${response.status}: ${errText}`
             },
             id: (message as { id?: string | number }).id ?? undefined
           };
@@ -370,7 +371,7 @@ async function runStdio(rawArgs: string[]): Promise<void> {
         jsonrpc: "2.0",
         error: {
           code: -32603,
-          message: `AgentMesh daemon is not running or unreachable at ${mcpUrl}. Start the daemon with 'npx agentmesh start'.`
+          message: `Belay daemon is not running or unreachable at ${mcpUrl}. Start the daemon with 'npx belay start'.`
         },
         id: (message as { id?: string | number }).id ?? undefined
       });
@@ -418,7 +419,7 @@ function findClaudeDesktopConfigPaths(): string[] {
 }
 
 async function runSetup(): Promise<void> {
-  process.stdout.write("\nAgentMesh Client Auto-Setup\n\n");
+  process.stdout.write("\nBelay Client Auto-Setup\n\n");
   const candidates = findClaudeDesktopConfigPaths();
   let updatedAny = false;
 
@@ -430,8 +431,8 @@ async function runSetup(): Promise<void> {
         if (!json.mcpServers || typeof json.mcpServers !== "object") {
           json.mcpServers = {};
         }
-        (json.mcpServers as Record<string, unknown>).agentmesh = {
-          command: "agentmesh",
+        (json.mcpServers as Record<string, unknown>).belay = {
+          command: "belay",
           args: ["stdio"]
         };
         writeFileSync(configPath, JSON.stringify(json, null, 2) + "\n", "utf8");
@@ -450,8 +451,8 @@ async function runSetup(): Promise<void> {
         mkdirSync(dirname(defaultPath), { recursive: true });
         const config = {
           mcpServers: {
-            agentmesh: {
-              command: "agentmesh",
+            belay: {
+              command: "belay",
               args: ["stdio"]
             }
           }
@@ -466,7 +467,7 @@ async function runSetup(): Promise<void> {
   }
 
   if (updatedAny) {
-    process.stdout.write("\nSetup complete! Restart Claude Desktop to start using AgentMesh.\n\n");
+    process.stdout.write("\nSetup complete! Restart Claude Desktop to start using Belay.\n\n");
   } else {
     process.stdout.write(" [INFO] No Claude Desktop installation found on this machine.\n\n");
   }
@@ -500,7 +501,7 @@ export async function main(): Promise<void> {
 const entryFile = process.argv[1] ?? "";
 if (entryFile.endsWith("cli.js") || entryFile.endsWith("cli.ts")) {
   void main().catch((error) => {
-    process.stderr.write(`[AgentMesh Fatal] ${error instanceof Error ? error.stack ?? error.message : String(error)}\n`);
+    process.stderr.write(`[Belay Fatal] ${error instanceof Error ? error.stack ?? error.message : String(error)}\n`);
     process.exit(1);
   });
 }

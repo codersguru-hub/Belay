@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
-const endpoint = process.env.AGENTMESH_MCP_URL ?? "http://127.0.0.1:3420/mcp";
-const projectRoot = resolve(process.env.AGENTMESH_PROJECT_ROOT ?? process.cwd());
+const endpoint = process.env.BELAY_MCP_URL ?? "http://127.0.0.1:3420/mcp";
+const projectRoot = resolve(process.env.BELAY_PROJECT_ROOT ?? process.cwd());
 
 async function connect(name: string): Promise<Client> {
   const client = new Client({ name, version: "0.1.0" });
@@ -11,8 +11,8 @@ async function connect(name: string): Promise<Client> {
   return client;
 }
 
-const codex = await connect("agentmesh-smoke-codex");
-const claude = await connect("agentmesh-smoke-claude");
+const codex = await connect("belay-smoke-codex");
+const claude = await connect("belay-smoke-claude");
 const suffix = randomUUID();
 
 try {

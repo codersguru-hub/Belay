@@ -18,7 +18,7 @@ export const ProjectConfigFileSchema = z
 
 export type ProjectConfigFile = z.infer<typeof ProjectConfigFileSchema>;
 
-export interface AgentMeshConfig {
+export interface BelayConfig {
   host: "127.0.0.1";
   port: number;
   stateDirectory: string;
@@ -32,9 +32,9 @@ export interface AgentMeshConfig {
 
 function tryReadConfigFile(projectRoot: string): { config: ProjectConfigFile; filePath: string } | null {
   const candidateNames = [
-    resolve(projectRoot, ".agentmesh", "config.json"),
-    resolve(projectRoot, "agentmesh.config.json"),
-    resolve(projectRoot, ".agentmesh.json")
+    resolve(projectRoot, ".belay", "config.json"),
+    resolve(projectRoot, "belay.config.json"),
+    resolve(projectRoot, ".belay.json")
   ];
 
   for (const candidate of candidateNames) {
@@ -45,7 +45,7 @@ function tryReadConfigFile(projectRoot: string): { config: ProjectConfigFile; fi
         const validated = ProjectConfigFileSchema.parse(parsed);
         return { config: validated, filePath: candidate };
       } catch (error) {
-        process.stderr.write(`[AgentMesh] Warning: Failed to parse config file at ${candidate}: ${error instanceof Error ? error.message : String(error)}\n`);
+        process.stderr.write(`[Belay] Warning: Failed to parse config file at ${candidate}: ${error instanceof Error ? error.message : String(error)}\n`);
       }
     }
   }
@@ -55,7 +55,7 @@ function tryReadConfigFile(projectRoot: string): { config: ProjectConfigFile; fi
 export function loadConfig(
   overrides: Partial<
     Pick<
-      AgentMeshConfig,
+      BelayConfig,
       | "port"
       | "stateDirectory"
       | "projectRoot"
@@ -64,10 +64,10 @@ export function loadConfig(
       | "ageBinaryPath"
     >
   > = {}
-): AgentMeshConfig {
+): BelayConfig {
   const projectRoot = resolve(
     overrides.projectRoot ??
-      process.env.AGENTMESH_PROJECT_ROOT ??
+      process.env.BELAY_PROJECT_ROOT ??
       process.env.INIT_CWD ??
       process.cwd()
   );
@@ -77,14 +77,14 @@ export function loadConfig(
 
   const rawStateDirectory =
     overrides.stateDirectory ??
-    process.env.AGENTMESH_STATE_DIR ??
+    process.env.BELAY_STATE_DIR ??
     fileConfig?.stateDirectory ??
-    resolve(homedir(), ".agentmesh");
+    resolve(homedir(), ".belay");
   const stateDirectory = resolve(rawStateDirectory);
 
   let rawPort: unknown = overrides.port;
-  if (rawPort === undefined && process.env.AGENTMESH_PORT !== undefined) {
-    rawPort = process.env.AGENTMESH_PORT;
+  if (rawPort === undefined && process.env.BELAY_PORT !== undefined) {
+    rawPort = process.env.BELAY_PORT;
   }
   if (rawPort === undefined && fileConfig?.port !== undefined) {
     rawPort = fileConfig.port;
@@ -93,19 +93,19 @@ export function loadConfig(
 
   const configuredWorkspace =
     overrides.workspaceName ??
-    process.env.AGENTMESH_WORKSPACE ??
+    process.env.BELAY_WORKSPACE ??
     fileConfig?.workspaceName ??
     null;
 
   const cloudServiceUrl =
     overrides.cloudServiceUrl ??
-    process.env.AGENTMESH_CLOUD_URL ??
+    process.env.BELAY_CLOUD_URL ??
     fileConfig?.cloudServiceUrl ??
     null;
 
   const ageBinaryPath =
     overrides.ageBinaryPath ??
-    process.env.AGENTMESH_AGE_BIN ??
+    process.env.BELAY_AGE_BIN ??
     fileConfig?.ageBinaryPath ??
     null;
 

@@ -8,6 +8,8 @@ import { cloudRequestsMigration } from "./migrations/006_cloud_requests.js";
 import { sharedWorkflowMigration } from "./migrations/007_shared_workflow.js";
 import { projectKnowledgeMigration } from "./migrations/008_project_knowledge.js";
 import { cloudConflictKindMigration } from "./migrations/009_cloud_conflict_kind.js";
+import { studioMigration } from "./migrations/010_studio.js";
+import { cloudFleetDecompositionMigration } from "./migrations/011_cloud_fleet_decomposition.js";
 
 const migrations = [
   coordinationMigration,
@@ -18,7 +20,9 @@ const migrations = [
   cloudRequestsMigration,
   sharedWorkflowMigration,
   projectKnowledgeMigration,
-  cloudConflictKindMigration
+  cloudConflictKindMigration,
+  studioMigration,
+  cloudFleetDecompositionMigration
 ] as const;
 
 interface AppliedMigrationRow {

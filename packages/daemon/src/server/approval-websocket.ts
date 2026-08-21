@@ -36,7 +36,13 @@ export function attachApprovalWebSocket(
   const sockets = new Set<Socket>();
   const onUpgrade = (req: IncomingMessage, socket: Socket): void => {
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "127.0.0.1"}`);
-    if (url.pathname !== "/events") return reject(socket, "404 Not Found");
+    // Both this listener and attachStudioWebSocket's are registered on the same server's
+    // "upgrade" event, and Node calls every listener regardless of what an earlier one does to
+    // the socket. A hard reject() here for any non-matching path would end/destroy the socket
+    // before the other listener's own path check ever runs, killing /events/studio requests
+    // before they're handled. Silently deferring to the next listener is what studio-websocket.ts
+    // already does correctly for its own non-matching case.
+    if (url.pathname !== "/events") return;
     if (req.headers["x-forwarded-for"] || req.headers["x-forwarded-host"]) return reject(socket);
     const host = (req.headers.host ?? "").split(":", 1)[0]?.toLowerCase();
     const origin = req.headers.origin ? new URL(req.headers.origin).hostname.toLowerCase() : host;
@@ -46,12 +52,12 @@ export function attachApprovalWebSocket(
     const protocols = String(req.headers["sec-websocket-protocol"] ?? "")
       .split(",")
       .map((value) => value.trim());
-    const expectedProtocol = `agentmesh-token.${sessionToken}`;
+    const expectedProtocol = `belay-token.${sessionToken}`;
     const cookieToken = String(req.headers.cookie ?? "")
       .split(";")
       .map((value) => value.trim())
-      .find((value) => value.startsWith("agentmesh_session="))
-      ?.slice("agentmesh_session=".length);
+      .find((value) => value.startsWith("belay_session="))
+      ?.slice("belay_session=".length);
     const protocolAuthorized = protocols.some((value) => secureEqual(value, expectedProtocol));
     const cookieAuthorized = cookieToken ? secureEqual(cookieToken, sessionToken) : false;
     if (!protocolAuthorized && !cookieAuthorized) return reject(socket, "401 Unauthorized");

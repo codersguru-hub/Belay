@@ -21,7 +21,7 @@ const snapshot: DashboardSnapshot = {
     cloudMessage: "Cloud intelligence unavailable · Local controls active",
     mcpSessions: 2
   },
-  project: { id: "project-demo", name: "agentmesh-demo", root: "D:/demo" },
+  project: { id: "project-demo", name: "belay-demo", root: "D:/demo" },
   agents: [
     { name: "codex", activeTasks: 1, state: "active" },
     { name: "claude-code", activeTasks: 0, state: "idle" }
@@ -149,7 +149,7 @@ afterEach(() => {
 
 describe("quiet developer cockpit", () => {
   it("shows high-signal state with clear units, labels, and resource-lock chips", async () => {
-    render(<App />);
+    render(<App initialMode="cockpit" />);
     expect(await screen.findByText("Refactor the shared API")).toBeTruthy();
     expect(screen.getByText("src/engine/core.ts").className).toContain("path-chip");
     expect(screen.getByText("60%")).toBeTruthy();
@@ -179,7 +179,7 @@ describe("quiet developer cockpit", () => {
       headers: { "content-type": "application/json" }
     })));
 
-    render(<App />);
+    render(<App initialMode="cockpit" />);
     expect(await screen.findByText("LOCAL-ONLY · READY")).toBeTruthy();
     expect(document.body.textContent).not.toContain("DEGRADED");
     expect(document.body.textContent).not.toContain("not configured");
@@ -187,7 +187,7 @@ describe("quiet developer cockpit", () => {
 
   it("keeps approval shortcuts scoped to the focused approval card", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<App initialMode="cockpit" />);
     await screen.findByText("Approve & execute");
     const filter = screen.getByLabelText("Filter cockpit");
     filter.focus();
@@ -205,9 +205,18 @@ describe("quiet developer cockpit", () => {
 
   it("supports G-key section navigation", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<App initialMode="cockpit" />);
     await screen.findByText("Audit stream");
     await user.keyboard("gu");
     expect(document.activeElement?.id).toBe("audit");
+  });
+
+  it("renders Superdesign Studio mode by default with welcome hero and suggestions", async () => {
+    render(<App initialMode="studio" />);
+    expect(await screen.findByText("Belay Studio")).toBeTruthy();
+    expect(screen.getByText("Audit MQL Parity")).toBeTruthy();
+    expect(screen.getByText("Error Handling")).toBeTruthy();
+    expect(screen.getByText("Security Posture")).toBeTruthy();
+    expect(screen.getByText("Gemini Fleet Plan")).toBeTruthy();
   });
 });

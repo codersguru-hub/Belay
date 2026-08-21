@@ -1,4 +1,4 @@
-export type StatusTone = "healthy" | "pending" | "blocked" | "info" | "muted";
+export type StatusTone = "healthy" | "pending" | "blocked" | "info" | "muted" | "neutral" | "danger";
 
 export interface DashboardTask {
   id: string;

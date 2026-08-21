@@ -1,11 +1,13 @@
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import type Database from "better-sqlite3";
 import type {
   CommandExecutionResult,
   CommandRunStatus,
   RunProjectCommandInput
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import { CoordinationError } from "../coordination/errors.js";
 import {
   canonicalizeProjectRoot,
@@ -66,9 +68,24 @@ export class CommandExecutor {
     return this.runInternal(input, true);
   }
 
+  async runApprovedWithStdin(
+    input: RunProjectCommandInput,
+    stdinInput?: string
+  ): Promise<CommandExecutionResult> {
+    return this.runInternal(input, true, stdinInput);
+  }
+
+  async runWithStdin(
+    input: RunProjectCommandInput,
+    stdinInput?: string
+  ): Promise<CommandExecutionResult> {
+    return this.runInternal(input, false, stdinInput);
+  }
+
   private async runInternal(
     input: RunProjectCommandInput,
-    allowApprovalRequired: boolean
+    allowApprovalRequired: boolean,
+    stdinInput?: string
   ): Promise<CommandExecutionResult> {
     const correlationId = this.createId();
     const project = this.resolveProject(input.projectRoot, correlationId);
@@ -120,7 +137,7 @@ export class CommandExecutor {
     }
 
     if (template.environmentVariableNames.length === 0) {
-      return this.execute(project, plan, {}, correlationId);
+      return this.execute(project, plan, {}, correlationId, stdinInput);
     }
     const status = this.vault.status();
     if (status.state !== "unlocked") {
@@ -143,7 +160,7 @@ export class CommandExecutor {
     try {
       return await this.vault.withUnlockedEnvironment(
         template.environmentVariableNames,
-        (environment) => this.execute(project, plan, environment, correlationId)
+        (environment) => this.execute(project, plan, environment, correlationId, stdinInput)
       );
     } catch (error) {
       if (error instanceof CoordinationError) throw error;
@@ -169,7 +186,7 @@ export class CommandExecutor {
     }
     throw new CoordinationError({
       code: "PROJECT_NOT_FOUND",
-      message: "The project has not been initialized in AgentMesh.",
+      message: "The project has not been initialized in Belay.",
       correlationId
     });
   }
@@ -189,7 +206,8 @@ export class CommandExecutor {
     project: ProjectRow,
     plan: ValidatedCommandPlan,
     secretEnvironment: Readonly<Record<string, string>>,
-    correlationId: string
+    correlationId: string,
+    stdinInput?: string
   ): Promise<CommandExecutionResult> {
     let redactor: SecretRedactor;
     try {
@@ -239,7 +257,8 @@ export class CommandExecutor {
       plan,
       spawnArguments,
       environment,
-      redactor
+      redactor,
+      stdinInput
     );
     for (const name of Object.keys(environment)) {
       environment[name] = "";
@@ -287,7 +306,8 @@ export class CommandExecutor {
     plan: ValidatedCommandPlan,
     spawnArguments: string[],
     environment: NodeJS.ProcessEnv,
-    redactor: SecretRedactor
+    redactor: SecretRedactor,
+    stdinInput?: string
   ): Promise<CapturedExecution> {
     return new Promise((resolveResult) => {
       const stdoutRedactor = redactor.createStream();
@@ -301,13 +321,29 @@ export class CommandExecutor {
       let spawnFailed = false;
       let settled = false;
 
-      const child = spawn(plan.template.executable, spawnArguments, {
+      const hasStdin = plan.template.argumentMode === "prompt_stdin" || stdinInput !== undefined;
+      let exe = plan.template.executable;
+      if (process.platform === "win32" && !exe.includes("/") && !exe.includes("\\") && !exe.endsWith(".exe") && !exe.endsWith(".cmd")) {
+        const appdata = process.env.APPDATA || "";
+        const npmCmd = resolve(appdata, "npm", `${exe}.cmd`);
+        if (existsSync(npmCmd)) {
+          exe = npmCmd;
+        }
+      }
+
+      const child = spawn(exe, spawnArguments, {
         cwd: plan.absoluteWorkingDirectory,
         env: environment,
         shell: false,
         windowsHide: true,
-        stdio: ["ignore", "pipe", "pipe"]
+        stdio: [hasStdin ? "pipe" : "ignore", "pipe", "pipe"]
       });
+      if (hasStdin && child.stdin) {
+        if (stdinInput) {
+          child.stdin.write(stdinInput);
+        }
+        child.stdin.end();
+      }
       const stop = (): void => {
         if (!child.killed) child.kill();
       };
@@ -340,8 +376,8 @@ export class CommandExecutor {
           stop();
         }
       };
-      child.stdout.on("data", (chunk: Buffer) => consume("stdout", chunk, stdoutRedactor));
-      child.stderr.on("data", (chunk: Buffer) => consume("stderr", chunk, stderrRedactor));
+      child.stdout?.on("data", (chunk: Buffer) => consume("stdout", chunk, stdoutRedactor));
+      child.stderr?.on("data", (chunk: Buffer) => consume("stderr", chunk, stderrRedactor));
       child.once("error", () => {
         spawnFailed = true;
       });

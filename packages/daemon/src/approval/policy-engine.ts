@@ -1,4 +1,4 @@
-import type { CommandPolicyClass } from "@agentmesh/contracts";
+import type { CommandPolicyClass } from "@belay/contracts";
 import type { CommandTemplate } from "../executor/command-registry.js";
 
 export interface PolicyDecision {

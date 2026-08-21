@@ -1,4 +1,4 @@
-import type { ChecklistItem } from "@agentmesh/contracts";
+import type { ChecklistItem } from "@belay/contracts";
 
 export interface ChecklistItemRow {
   id: string;

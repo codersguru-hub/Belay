@@ -2,11 +2,11 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createAgentMeshApp, type AgentMeshApp } from "../packages/daemon/src/app.js";
+import { createBelayApp, type BelayApp } from "../packages/daemon/src/app.js";
 import type { CommandTemplate } from "../packages/daemon/src/executor/command-registry.js";
 
 const cleanupDirectories: string[] = [];
-const cleanupApps: AgentMeshApp[] = [];
+const cleanupApps: BelayApp[] = [];
 
 function approvalTemplate(scriptPath: string, markerPath: string): CommandTemplate {
   return {
@@ -32,7 +32,7 @@ function approvalTemplate(scriptPath: string, markerPath: string): CommandTempla
 }
 
 function fixture(now = new Date("2026-08-15T10:00:00.000Z")) {
-  const root = mkdtempSync(join(tmpdir(), "agentmesh-approval-"));
+  const root = mkdtempSync(join(tmpdir(), "belay-approval-"));
   cleanupDirectories.push(root);
   const stateDirectory = join(root, ".state");
   const scriptPath = join(root, "reload.mjs");
@@ -44,7 +44,7 @@ function fixture(now = new Date("2026-08-15T10:00:00.000Z")) {
   );
   let clock = now;
   const template = approvalTemplate(scriptPath, markerPath);
-  const app = createAgentMeshApp({
+  const app = createBelayApp({
     projectRoot: root,
     stateDirectory,
     port: 0,
@@ -167,7 +167,7 @@ describe("approval policy and immutable action digest", () => {
       "UPDATE approval_requests SET status = 'executing' WHERE id = ?"
     ).run(pending.approvalId);
     await f.app.close();
-    const restarted = createAgentMeshApp({
+    const restarted = createBelayApp({
       projectRoot: f.root,
       stateDirectory: f.stateDirectory,
       commandTemplates: [f.template]
@@ -207,7 +207,7 @@ describe("approval policy and immutable action digest", () => {
     );
     expect(unauthorized.status).toBe(401);
 
-    const protocol = `agentmesh-token.${f.app.dashboardSessionToken}`;
+    const protocol = `belay-token.${f.app.dashboardSessionToken}`;
     const socket = new WebSocket(`ws://${endpoint.host}:${endpoint.port}/events`, protocol);
     await new Promise<void>((resolvePromise, reject) => {
       socket.addEventListener("open", () => resolvePromise(), { once: true });

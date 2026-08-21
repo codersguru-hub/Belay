@@ -6,13 +6,13 @@ COPY packages/cloud-service/package.json packages/cloud-service/package.json
 COPY packages/dashboard/package.json packages/dashboard/package.json
 COPY packages/daemon/package.json packages/daemon/package.json
 RUN npm ci \
-  --workspace @agentmesh/contracts \
-  --workspace @agentmesh/cloud-service \
+  --workspace @belay/contracts \
+  --workspace @belay/cloud-service \
   --include-workspace-root=true
 COPY tsconfig.base.json ./
 COPY packages/contracts packages/contracts
 COPY packages/cloud-service packages/cloud-service
-RUN npm run build --workspace @agentmesh/contracts && npm run build --workspace @agentmesh/cloud-service
+RUN npm run build --workspace @belay/contracts && npm run build --workspace @belay/cloud-service
 
 FROM node:22-slim AS production-dependencies
 WORKDIR /app
@@ -23,8 +23,8 @@ COPY packages/dashboard/package.json packages/dashboard/package.json
 COPY packages/daemon/package.json packages/daemon/package.json
 RUN npm ci \
   --omit=dev \
-  --workspace @agentmesh/contracts \
-  --workspace @agentmesh/cloud-service \
+  --workspace @belay/contracts \
+  --workspace @belay/cloud-service \
   --include-workspace-root=false
 
 FROM node:22-slim AS runtime

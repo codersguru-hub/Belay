@@ -3,7 +3,7 @@ import {
   ExplainLockConflictInputSchema,
   type CloudLockConflict,
   type ExplainLockConflictResult
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { CoordinationService } from "../../coordination/coordination-service.js";
 import type { ManifestService } from "../../indexer/manifest-service.js";

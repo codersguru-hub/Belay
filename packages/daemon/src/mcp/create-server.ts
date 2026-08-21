@@ -18,7 +18,7 @@ import { registerProposeKnowledge } from "./tools/propose-knowledge.js";
 import { registerExplainLockConflict } from "./tools/explain-lock-conflict.js";
 import type { CloudIntelligenceService } from "../cloud/cloud-intelligence-service.js";
 
-export function createAgentMeshMcpServer(
+export function createBelayMcpServer(
   coordination: CoordinationService,
   manifests: ManifestService,
   approvals: ApprovalService,
@@ -26,7 +26,7 @@ export function createAgentMeshMcpServer(
   cloudIntelligence: CloudIntelligenceService
 ): McpServer {
   const server = new McpServer({
-    name: "AgentMesh",
+    name: "Belay",
     version: "0.1.0"
   });
 

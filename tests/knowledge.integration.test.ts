@@ -2,16 +2,16 @@ import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createAgentMeshApp, type AgentMeshApp } from "../packages/daemon/src/app.js";
+import { createBelayApp, type BelayApp } from "../packages/daemon/src/app.js";
 import { bootstrapProject } from "../packages/daemon/src/db/repositories/project-repository.js";
 
 const cleanupDirectories: string[] = [];
-const cleanupApps: AgentMeshApp[] = [];
+const cleanupApps: BelayApp[] = [];
 
 function fixture(workspaceName?: string) {
-  const root = mkdtempSync(join(tmpdir(), "agentmesh-knowledge-"));
+  const root = mkdtempSync(join(tmpdir(), "belay-knowledge-"));
   cleanupDirectories.push(root);
-  const app = createAgentMeshApp({
+  const app = createBelayApp({
     projectRoot: root,
     stateDirectory: join(root, ".state"),
     workspaceName: workspaceName ?? null,
@@ -38,7 +38,7 @@ describe("approved shared semantic knowledge", () => {
       scope: "project",
       kind: "constraint",
       title: "Shared contract boundary",
-      body: "All clients consume schemas from @agentmesh/contracts.",
+      body: "All clients consume schemas from @belay/contracts.",
       priority: 90
     });
     expect(pending).toMatchObject({
@@ -134,14 +134,14 @@ describe("approved shared semantic knowledge", () => {
   });
 
   it("shares workspace facts across grouped repositories while isolating project facts", async () => {
-    const { app, root } = fixture("agentmesh-suite");
+    const { app, root } = fixture("belay-suite");
     const siblingRoot = join(root, "sibling-repo");
     mkdirSync(siblingRoot);
     bootstrapProject(
       app.database,
       siblingRoot,
       "2026-08-16T10:00:00.000Z",
-      "agentmesh-suite"
+      "belay-suite"
     );
 
     for (const proposal of [

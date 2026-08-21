@@ -1,6 +1,6 @@
 # Dependency and license inventory
 
-Captured from the clean install on 2026-08-15. Internal `@agentmesh/*` workspaces are covered by the repository MIT license.
+Captured from the clean install on 2026-08-15. Internal `@belay/*` workspaces are covered by the repository MIT license.
 
 | Direct dependency | Resolved | Role | License |
 | --- | ---: | --- | --- |

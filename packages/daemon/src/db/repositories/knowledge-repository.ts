@@ -3,7 +3,7 @@ import type {
   KnowledgeItem,
   KnowledgeKind,
   KnowledgeScope
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 
 export interface KnowledgeRow {
   id: string;

@@ -1,4 +1,4 @@
-import type { ApprovalStatus } from "@agentmesh/contracts";
+import type { ApprovalStatus } from "@belay/contracts";
 
 export interface ApprovalEvent {
   type: "approval.updated";

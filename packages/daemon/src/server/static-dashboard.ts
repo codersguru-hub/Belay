@@ -37,7 +37,7 @@ export function serveDashboardAsset(
     "referrer-policy": "no-referrer",
     ...(isDocument
       ? {
-          "set-cookie": `agentmesh_session=${sessionToken}; HttpOnly; SameSite=Strict; Path=/`
+          "set-cookie": `belay_session=${sessionToken}; HttpOnly; SameSite=Strict; Path=/`
         }
       : {})
   });

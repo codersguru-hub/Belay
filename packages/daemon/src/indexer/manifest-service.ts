@@ -7,7 +7,7 @@ import type {
   ManifestMetricsResult,
   ManifestSnapshot,
   ProjectManifestV1
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import {
   findLatestManifestSnapshot,
   markLatestManifestStale,
@@ -251,7 +251,7 @@ export class ManifestService {
     if (!project) {
       throw new CoordinationError({
         code: "PROJECT_NOT_FOUND",
-        message: "The project has not been initialized in AgentMesh.",
+        message: "The project has not been initialized in Belay.",
         correlationId
       });
     }

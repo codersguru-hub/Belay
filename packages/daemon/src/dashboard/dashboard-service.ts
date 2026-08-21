@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import type { ApprovalStatus } from "@agentmesh/contracts";
+import type { ApprovalStatus } from "@belay/contracts";
 import type { ApprovalService } from "../approval/approval-service.js";
 import type { CoordinationService } from "../coordination/coordination-service.js";
 import type { ManifestService } from "../indexer/manifest-service.js";
@@ -153,7 +153,7 @@ export class DashboardService {
         id: `command-${String(row.id)}`,
         timestamp: String(row.event_at),
         type: "command" as const,
-        actor: "AgentMesh",
+        actor: "Belay",
         target: String(row.command_id),
         outcome: `${String(row.executable_alias)} · ${String(row.status)}`,
         correlationId: String(row.correlation_id)

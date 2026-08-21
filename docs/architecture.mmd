@@ -1,25 +1,27 @@
 flowchart LR
-  subgraph A["Trust Zone A · Independent agent clients"]
+  subgraph A["Trust Zone A · Independent Agent Fleet"]
     Claude["Claude Code"]
     Codex["OpenAI Codex"]
-    Anti["Antigravity"]
+    Anti["Antigravity (agy)"]
   end
-  subgraph B["Trust Zone B · Local AgentMesh control plane"]
+  subgraph B["Trust Zone B · Local Belay Control Plane"]
     MCP["Loopback MCP Streamable HTTP"]
-    Coordination["Coordination + leases"]
-    Indexer["Deterministic indexer"]
-    Vault["AES-GCM vault + age unwrap"]
-    Policy["Policy + immutable approvals"]
-    Executor["Registered shell-free executor"]
-    Egress["Exact-schema egress guard"]
-    SQLite[("SQLite WAL metadata")]
+    Coordination["Coordination + File Leases"]
+    Indexer["Deterministic Indexer"]
+    Vault["AES-256 Vault + age Unwrap"]
+    Policy["Policy + Immutable Approvals (stdinDigest)"]
+    Executor["Registered Shell-Free Executor"]
+    StudioSvc["Studio Service (Sessions + Git Diffs)"]
+    Egress["Exact-Schema Egress Guard"]
+    SQLite[("SQLite WAL Metadata + Sessions")]
   end
-  subgraph C["Trust Zone C · Local human cockpit"]
-    Dashboard["React dashboard"]
+  subgraph C["Trust Zone C · Human Dual-Mode Portal"]
+    Cockpit["🛡️ Cockpit Governance"]
+    Studio["⚡ Studio Workbench + Diff Inspector"]
   end
-  subgraph D["Trust Zone D · Advisory cloud intelligence"]
-    Run["Private Cloud Run service"]
-    Gemini["Genkit + Gemini"]
+  subgraph D["Trust Zone D · Cloud Arbiter + Fleet Intelligence"]
+    Run["Private Google Cloud Run (Genkit TS)"]
+    Gemini["Gemini 3.6 Flash"]
   end
   Claude --> MCP
   Codex --> MCP
@@ -32,9 +34,14 @@ flowchart LR
   Policy --> SQLite
   Policy --> Executor
   Vault --> Executor
-  Dashboard <-->|"sanitized REST + WebSocket"| B
+  StudioSvc <--> SQLite
+  StudioSvc --> Policy
+  Cockpit <-->|"Sanitized REST + WebSocket"| B
+  Studio <-->|"Prompt Dispatch + Diffs WS"| StudioSvc
+  Studio -->|"High-Level Fleet Goal"| Egress
   Indexer --> Egress
-  SQLite -->|"high-level audit projection"| Egress
-  Egress -->|"allowlisted structural metadata only"| Run
+  SQLite -->|"Allowlisted Metadata Only"| Egress
+  Egress --> Run
   Run --> Gemini
-  Gemini -->|"advisory structured summary"| Dashboard
+  Gemini -->|"Risk + Conflict Intelligence"| Cockpit
+  Gemini -->|"Structured Agent + Lease Plan"| Studio

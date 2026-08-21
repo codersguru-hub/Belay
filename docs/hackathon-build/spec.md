@@ -1,8 +1,8 @@
-# AgentMesh System Architecture & Technical Specification
+# Belay System Architecture & Technical Specification
 
 ## Overview
 
-AgentMesh is a local-first control plane for independent coding agents. A TypeScript daemon owns repository indexing, SQLite coordination state, secret-safe command execution, policy decisions, and audit events. Agents connect through one MCP Streamable HTTP endpoint. A React cockpit consumes local REST/WebSocket projections. A separate Genkit service on Cloud Run accepts only egress-validated structural metadata and audit summaries for Gemini-powered explanation.
+Belay is a local-first control plane for independent coding agents. A TypeScript daemon owns repository indexing, SQLite coordination state, secret-safe command execution, policy decisions, and audit events. Agents connect through one MCP Streamable HTTP endpoint. A React cockpit consumes local REST/WebSocket projections. A separate Genkit service on Cloud Run accepts only egress-validated structural metadata and audit summaries for Gemini-powered explanation.
 
 This specification maps directly to `prd.md`. Phase 1 implements the coordination kernel and the first three MCP tools; later phases add the indexer, vault, policy/approval UI, and cloud intelligence without changing the core task contracts.
 
@@ -15,7 +15,7 @@ This specification maps directly to `prd.md`. Phase 1 implements the coordinatio
 - MCP SDK: current v2 packages `@modelcontextprotocol/server`, `@modelcontextprotocol/node`, and `@modelcontextprotocol/core` rather than the older monolithic v1 package.
 - Persistence: `better-sqlite3`, WAL mode, foreign keys enabled, explicit transactions, schema migrations.
 - Repository paths: canonical absolute root internally; normalized repository-relative POSIX paths at all external contracts.
-- Local state root: configurable; default `~/.agentmesh`. Tests always use an isolated temporary directory.
+- Local state root: configurable; default `~/.belay`. Tests always use an isolated temporary directory.
 - Sensitive enforcement remains local. Cloud calls are an optional interpretation plane and never gate local operation.
 - Vault payload: AES-256-GCM encrypted JSON with a random data-encryption key (DEK); the DEK is wrapped to an `age` recipient, including supported RSA or Ed25519 SSH recipients.
 - MVP SSH-recipient decryption uses an explicit private-key identity file through the local `age` adapter. Official `age` SSH support does not use `ssh-agent`; agent/hardware-key unlock is a later adapter.
@@ -95,7 +95,7 @@ Cloud Run receives only a versioned allowlisted payload produced by the local eg
 ## Package And File Structure
 
 ```text
-AgentMesh/
+Belay/
 ├─ package.json                         # npm workspace scripts and shared toolchain
 ├─ tsconfig.base.json                   # strict compiler baseline
 ├─ .gitignore                           # excludes state, vault identities, logs, builds
@@ -529,7 +529,7 @@ Implements: PRD Epic 2.
 ### Inputs
 
 - canonical project root;
-- `.gitignore` plus AgentMesh exclusions;
+- `.gitignore` plus Belay exclusions;
 - allowlisted filenames and maximum sizes;
 - Git branch/status output captured without shell interpolation.
 
@@ -564,7 +564,7 @@ Implements: PRD Epic 4.
 
 ```ts
 interface VaultEnvelopeV1 {
-  format: 'agentmesh-vault';
+  format: 'belay-vault';
   version: 1;
   cipher: 'aes-256-gcm';
   keyWrap: 'age-ssh';

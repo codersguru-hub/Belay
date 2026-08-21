@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import type { ApprovalStatus } from "@agentmesh/contracts";
+import type { ApprovalStatus } from "@belay/contracts";
 
 export interface ApprovalRow {
   id: string;

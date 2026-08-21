@@ -1,5 +1,5 @@
 {
-  "name": "agentmesh-indexer-fixture",
+  "name": "belay-indexer-fixture",
   "private": true,
   "packageManager": "npm@10.9.3",
   "workspaces": ["packages/*"],

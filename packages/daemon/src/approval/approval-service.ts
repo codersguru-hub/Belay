@@ -1,14 +1,15 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import type {
   ApprovalDecisionInput,
   ApprovalStatus,
+  CommandExecutionResult,
   KnowledgeApprovalPreview,
   PendingApprovalResult,
   ProposeKnowledgeInput,
   ProjectCommandResult,
   RunProjectCommandInput
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import { CoordinationError } from "../coordination/errors.js";
 import {
   findApproval,
@@ -55,6 +56,23 @@ function parseJsonArray(value: string): string[] {
   return JSON.parse(value) as string[];
 }
 
+interface CommandActionPayload {
+  stdinPayload?: string;
+}
+
+function hashStdin(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function parseCommandPayload(value: string): CommandActionPayload {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed && typeof parsed === "object" ? (parsed as CommandActionPayload) : {};
+  } catch {
+    return {};
+  }
+}
+
 function digestFromRow(row: ApprovalRow): string {
   if (row.action_kind === "knowledge") {
     return knowledgeActionDigest({
@@ -66,6 +84,7 @@ function digestFromRow(row: ApprovalRow): string {
       expiresAt: row.expires_at
     });
   }
+  const stdinPayload = parseCommandPayload(row.action_payload_json).stdinPayload;
   return actionDigest({
     executor: "local-process",
     target: row.target_alias,
@@ -74,7 +93,8 @@ function digestFromRow(row: ApprovalRow): string {
     workingDirectory: row.working_directory,
     envProfile: row.environment_profile,
     policyVersion: row.policy_version,
-    expiresAt: row.expires_at
+    expiresAt: row.expires_at,
+    ...(stdinPayload !== undefined ? { stdinDigest: hashStdin(stdinPayload) } : {})
   });
 }
 
@@ -100,9 +120,12 @@ function knowledgePreview(payload: KnowledgeApprovalPayload): KnowledgeApprovalP
   };
 }
 
+type CommandResultListener = (approvalId: string, result: CommandExecutionResult) => void;
+
 export class ApprovalService {
   private readonly now: () => Date;
   private readonly createId: () => string;
+  private readonly commandResultListeners = new Set<CommandResultListener>();
 
   constructor(
     private readonly database: Database.Database,
@@ -116,7 +139,21 @@ export class ApprovalService {
     this.createId = options.createId ?? randomUUID;
   }
 
-  async request(input: RunProjectCommandInput): Promise<ProjectCommandResult> {
+  /**
+   * Notified with the raw CommandExecutionResult (including stdout/stderr) right after an
+   * approved command finishes executing. The result is never persisted to the database — only
+   * hashes are (see command_runs) — so this is the sole way a caller can see real output.
+   * Returns an unsubscribe function.
+   */
+  onCommandExecuted(listener: CommandResultListener): () => void {
+    this.commandResultListeners.add(listener);
+    return () => this.commandResultListeners.delete(listener);
+  }
+
+  async request(
+    input: RunProjectCommandInput,
+    stdinInput?: string
+  ): Promise<ProjectCommandResult> {
     const correlationId = this.createId();
     const project = this.resolveProject(input.projectRoot, correlationId);
     const template = this.registry.get(input.commandId);
@@ -135,7 +172,11 @@ export class ApprovalService {
         correlationId
       });
     }
-    if (decision.classification === "auto_allow") return this.executor.run(input);
+    if (decision.classification === "auto_allow") {
+      return stdinInput !== undefined
+        ? this.executor.runWithStdin(input, stdinInput)
+        : this.executor.run(input);
+    }
 
     let plan: ValidatedCommandPlan;
     try {
@@ -172,7 +213,8 @@ export class ApprovalService {
       workingDirectory: plan.displayWorkingDirectory,
       envProfile: template.environmentProfile ?? null,
       policyVersion: decision.version,
-      expiresAt
+      expiresAt,
+      ...(stdinInput !== undefined ? { stdinDigest: hashStdin(stdinInput) } : {})
     };
     const digest = actionDigest(action);
     const existing = this.database
@@ -186,7 +228,8 @@ export class ApprovalService {
       requester: input.requester ?? "unknown-agent",
       executor: "local-process",
       action_kind: "command",
-      action_payload_json: "{}",
+      action_payload_json:
+        stdinInput !== undefined ? JSON.stringify({ stdinPayload: stdinInput }) : "{}",
       target_alias: action.target,
       command_id: template.id,
       arguments_json: JSON.stringify(plan.arguments),
@@ -217,7 +260,7 @@ export class ApprovalService {
     if (!project.workspace_id) {
       throw new CoordinationError({
         code: "INTERNAL_ERROR",
-        message: "The project is not attached to an AgentMesh workspace.",
+        message: "The project is not attached to an Belay workspace.",
         correlationId
       });
     }
@@ -423,14 +466,19 @@ export class ApprovalService {
       }
       const project = this.database.prepare("SELECT canonical_root FROM projects WHERE id = ?")
         .get(decided.project_id) as { canonical_root: string };
-      const result = await this.executor.runApproved({
+      const commandInput = {
         projectRoot: project.canonical_root,
         commandId: decided.command_id,
         arguments: parseJsonArray(decided.arguments_json),
         workingDirectory: decided.working_directory,
         ...(decided.environment_profile ? { environmentProfile: decided.environment_profile } : {}),
         requester: decided.requester
-      });
+      };
+      const stdinPayload = parseCommandPayload(decided.action_payload_json).stdinPayload;
+      const result = stdinPayload !== undefined
+        ? await this.executor.runApprovedWithStdin(commandInput, stdinPayload)
+        : await this.executor.runApproved(commandInput);
+      for (const listener of this.commandResultListeners) listener(decided.id, result);
       const terminalStatus = result.status === "succeeded" ? "succeeded" : "failed";
       const completedAt = this.now().toISOString();
       const outcome = {
@@ -480,7 +528,7 @@ export class ApprovalService {
     }
     throw new CoordinationError({
       code: "PROJECT_NOT_FOUND",
-      message: "The project has not been initialized in AgentMesh.",
+      message: "The project has not been initialized in Belay.",
       correlationId
     });
   }

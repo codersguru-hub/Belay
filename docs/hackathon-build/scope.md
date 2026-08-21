@@ -2,13 +2,13 @@
 
 ## Project Name Candidates
 
-- **AgentMesh** — selected; communicates heterogeneous agents connected through shared control-plane rails.
+- **Belay** — selected; communicates heterogeneous agents connected through shared control-plane rails.
 - AgentSidecar — rejected because it understates the shared-state and governance surface.
 - AgentVault — rejected because security is central but not the whole product.
 
 ## One-Line Summary
 
-AgentMesh is a local-first control plane that lets heterogeneous coding agents share compact repository context and coordinate file ownership while executing secret-dependent commands without exposing plaintext credentials, with a privacy-filtered Gemini service on Cloud Run for semantic summaries and policy explanations.
+Belay is a local-first control plane that lets heterogeneous coding agents share compact repository context and coordinate file ownership while executing secret-dependent commands without exposing plaintext credentials, with a privacy-filtered Gemini service on Cloud Run for semantic summaries and policy explanations.
 
 ## Target User
 
@@ -16,7 +16,7 @@ The MVP serves a solo power developer or lead architect who runs Claude Code, Op
 
 ## Problem
 
-CLI coding agents behave like isolated operators. Each rescans the repository, lacks reliable awareness of the others, and may request environment or deployment access through unsafe plaintext workflows. Existing memory tools do not provide execution isolation, and traditional orchestrators assume they control the agents. AgentMesh instead supplies a neutral local control plane: shared state, deterministic context, secret-safe execution, and explicit policy boundaries without deciding which agent should do which work.
+CLI coding agents behave like isolated operators. Each rescans the repository, lacks reliable awareness of the others, and may request environment or deployment access through unsafe plaintext workflows. Existing memory tools do not provide execution isolation, and traditional orchestrators assume they control the agents. Belay instead supplies a neutral local control plane: shared state, deterministic context, secret-safe execution, and explicit policy boundaries without deciding which agent should do which work.
 
 ## Time Budget
 
@@ -29,11 +29,11 @@ CLI coding agents behave like isolated operators. Each rescans the repository, l
 
 ## Core Workflow
 
-1. The developer starts AgentMesh for a selected repository.
+1. The developer starts Belay for a selected repository.
 2. The deterministic indexer reads known configuration and source structure, records the dirty Git state, and emits a bounded `project://manifest` resource.
 3. Codex calls `acquire_task`, atomically claims a task and file set, and records progress in SQLite WAL.
 4. Claude Code calls `get_stage_context`, sees the active lock set and recent memory, then chooses non-conflicting work.
-5. An agent requests a secret-dependent allowlisted command. AgentMesh unwraps the vault key using a local SSH identity, decrypts values in memory, injects them into a child process, and redacts output before returning it.
+5. An agent requests a secret-dependent allowlisted command. Belay unwraps the vault key using a local SSH identity, decrypts values in memory, injects them into a child process, and redacts output before returning it.
 6. A mutating remote-style action enters an approval queue. The dashboard displays masked context and requires an explicit human decision. The MVP proves the policy and approval boundary against a disposable/local executor; a production VPS adapter is stretch.
 7. Sanitized structural metadata or audit events may be sent to the Gemini service on Cloud Run. The local egress guard rejects secrets, raw connection strings, private keys, and unredacted repository content before network transmission.
 
@@ -77,7 +77,7 @@ CLI coding agents behave like isolated operators. Each rescans the repository, l
 
 ## Demo Path
 
-1. Start AgentMesh against a prepared dirty repository and display deterministic manifest generation, elapsed time, byte count, and estimated token count.
+1. Start Belay against a prepared dirty repository and display deterministic manifest generation, elapsed time, byte count, and estimated token count.
 2. Show Codex acquiring a backend refactor task and locking schema/API files.
 3. Show Claude Code retrieving stage context, observing the conflict, and selecting an unlocked frontend task.
 4. Execute a test command requiring a known canary secret. Show successful process behavior while MCP/dashboard outputs contain only `[REDACTED]`; scan persisted artifacts to prove the canary was not written.
@@ -86,7 +86,7 @@ CLI coding agents behave like isolated operators. Each rescans the repository, l
 
 ## Submission Story
 
-AgentMesh targets **Fortified Enterprise Fleet** as the missing local trust and coordination layer for independent coding agents. The differentiator is not another agent conversation UI; it is verifiable infrastructure that prevents collisions, reduces redundant context, protects credentials, and preserves human authority over dangerous actions. The submission will show Gemini and Cloud Run as a privacy-constrained intelligence plane, while the sensitive enforcement plane remains local.
+Belay targets **Fortified Enterprise Fleet** as the missing local trust and coordination layer for independent coding agents. The differentiator is not another agent conversation UI; it is verifiable infrastructure that prevents collisions, reduces redundant context, protects credentials, and preserves human authority over dangerous actions. The submission will show Gemini and Cloud Run as a privacy-constrained intelligence plane, while the sensitive enforcement plane remains local.
 
 ## Scope Exit Criteria
 

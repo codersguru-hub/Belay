@@ -14,10 +14,10 @@ import type {
   CloudSummaryRequestV1,
   CloudSummaryResponse,
   EnvironmentSchemaV1
-} from "@agentmesh/contracts";
+} from "@belay/contracts";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { describe, expect, it } from "vitest";
-import { createAgentMeshApp, type AgentMeshApp } from "../packages/daemon/src/app.js";
+import { createBelayApp, type BelayApp } from "../packages/daemon/src/app.js";
 import { CloudIntelligenceService } from "../packages/daemon/src/cloud/cloud-intelligence-service.js";
 import type { CloudSummaryAdapter } from "../packages/daemon/src/cloud/cloud-run-adapter.js";
 import { EgressGuard, EgressRejectedError } from "../packages/daemon/src/cloud/egress-guard.js";
@@ -28,12 +28,12 @@ import type {
 } from "../packages/daemon/src/vault/age-cli-adapter.js";
 
 class DemoKeyWrapAdapter implements KeyWrapAdapter {
-  private readonly key = createHash("sha256").update("agentmesh-hero-demo-wrap").digest();
+  private readonly key = createHash("sha256").update("belay-hero-demo-wrap").digest();
 
   inspectRecipient(): RecipientMetadata {
     return {
       type: "ssh-ed25519",
-      fingerprint: `sha256:${createHash("sha256").update("agentmesh-hero-demo").digest("hex")}`
+      fingerprint: `sha256:${createHash("sha256").update("belay-hero-demo").digest("hex")}`
     };
   }
 
@@ -114,9 +114,9 @@ function commandTemplates(scriptPath: string, markerPath: string): CommandTempla
   ];
 }
 
-describe("integrated AgentMesh hero flow", () => {
+describe("integrated Belay hero flow", () => {
   it("proves deterministic context, collision prevention, zero-leak execution, approval, cloud egress, and restart recovery", async () => {
-    const sandbox = mkdtempSync(join(tmpdir(), "agentmesh-hero-"));
+    const sandbox = mkdtempSync(join(tmpdir(), "belay-hero-"));
     const projectRoot = join(sandbox, "demo-repo");
     const stateDirectory = join(sandbox, "state");
     const sourceDirectory = join(projectRoot, "src");
@@ -124,10 +124,10 @@ describe("integrated AgentMesh hero flow", () => {
     const commandPath = join(projectRoot, "demo-command.mjs");
     const vaultPath = join(projectRoot, ".env.vault");
     const schemaPath = join(projectRoot, ".env.schema.json");
-    const canary = `AGENTMESH_${randomUUID()}_S3cret+/=`;
+    const canary = `BELAY_${randomUUID()}_S3cret+/=`;
     const captures: Record<string, unknown> = {};
-    let app: AgentMeshApp | undefined;
-    let restarted: AgentMeshApp | undefined;
+    let app: BelayApp | undefined;
+    let restarted: BelayApp | undefined;
     let codex: ConnectedClient | undefined;
     let claude: ConnectedClient | undefined;
     let recoveryClient: ConnectedClient | undefined;
@@ -137,7 +137,7 @@ describe("integrated AgentMesh hero flow", () => {
     writeFileSync(
       join(projectRoot, "package.json"),
       `${JSON.stringify({
-        name: "agentmesh-hero-demo",
+        name: "belay-hero-demo",
         private: true,
         scripts: { build: "tsc", test: "vitest run", dev: "vite --port 5173" },
         dependencies: { "@modelcontextprotocol/server": "2.0.0", vite: "8.0.0" }
@@ -175,7 +175,7 @@ if (mode === "secret") {
 
     try {
       const templates = commandTemplates(commandPath, markerPath);
-      app = createAgentMeshApp({
+      app = createBelayApp({
         projectRoot,
         stateDirectory,
         port: 0,
@@ -249,7 +249,7 @@ if (mode === "secret") {
       captures.completion = completion.structuredContent;
 
       const schema: EnvironmentSchemaV1 = {
-        format: "agentmesh-env-schema",
+        format: "belay-env-schema",
         version: 1,
         profile: "demo",
         variables: [{ name: "DB_PASSWORD", required: true, description: "Demo database credential" }]
@@ -311,7 +311,7 @@ if (mode === "secret") {
       captures.pendingRest = await pendingResponse.json();
       expect(JSON.stringify(captures.pendingRest)).not.toContain(canary);
 
-      const protocol = `agentmesh-token.${app.dashboardSessionToken}`;
+      const protocol = `belay-token.${app.dashboardSessionToken}`;
       socket = new WebSocket(`ws://${endpoint.host}:${endpoint.port}/events`, protocol);
       await new Promise<void>((resolvePromise, reject) => {
         socket!.addEventListener("open", () => resolvePromise(), { once: true });
@@ -438,7 +438,7 @@ if (mode === "secret") {
       await app.close();
       app = undefined;
 
-      restarted = createAgentMeshApp({
+      restarted = createBelayApp({
         projectRoot,
         stateDirectory,
         port: 0,

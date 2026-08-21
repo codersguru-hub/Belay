@@ -9,9 +9,12 @@ import type { ApprovalService } from "../approval/approval-service.js";
 import type { ApprovalEventHub } from "../approval/event-hub.js";
 import { createDashboardApi } from "./dashboard-api.js";
 import { attachApprovalWebSocket } from "./approval-websocket.js";
+import { attachStudioWebSocket } from "./studio-websocket.js";
 import type { DashboardService } from "../dashboard/dashboard-service.js";
 import { serveDashboardAsset } from "./static-dashboard.js";
 import type { CloudIntelligenceService } from "../cloud/cloud-intelligence-service.js";
+import type { StudioService } from "../studio/studio-service.js";
+import type { CoordinationService } from "../coordination/coordination-service.js";
 
 export interface StartedHttpServer {
   host: string;
@@ -20,30 +23,34 @@ export interface StartedHttpServer {
   dashboardUrl: string;
 }
 
-export interface AgentMeshHttpServer {
+export interface BelayHttpServer {
   start(): Promise<StartedHttpServer>;
   close(): Promise<void>;
   readonly rawServer: Server;
 }
 
-export function createAgentMeshHttpServer(options: {
+export function createBelayHttpServer(options: {
   host: "127.0.0.1";
   port: number;
   mcpServerFactory: () => McpServer;
   approvals: ApprovalService;
+  coordination: CoordinationService;
   cloudIntelligence: CloudIntelligenceService;
   approvalEvents: ApprovalEventHub;
   dashboardSessionToken: string;
   dashboard: DashboardService;
+  studio: StudioService;
   dashboardDirectory: string;
-}): AgentMeshHttpServer {
+}): BelayHttpServer {
   const validateHost = localhostHostValidation();
   const validateOrigin = localhostOriginValidation();
   const mcpRouter = createMcpSessionRouter(options.mcpServerFactory);
   const dashboardApi = createDashboardApi(
     options.approvals,
+    options.coordination,
     options.cloudIntelligence,
     options.dashboard,
+    options.studio,
     options.dashboardSessionToken,
     () => mcpRouter.sessionCount
   );
@@ -61,7 +68,7 @@ export function createAgentMeshHttpServer(options: {
     const requestUrl = new URL(req.url ?? "/", `http://${req.headers.host ?? options.host}`);
     if (requestUrl.pathname === "/healthz" && req.method === "GET") {
       res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
-      res.end(JSON.stringify({ status: "ok", service: "agentmesh" }));
+      res.end(JSON.stringify({ status: "ok", service: "belay" }));
       return;
     }
     if (requestUrl.pathname.startsWith("/api/")) {
@@ -107,11 +114,18 @@ export function createAgentMeshHttpServer(options: {
       }
     });
   });
-  const closeWebSocket = attachApprovalWebSocket(
+  const closeApprovalWebSocket = attachApprovalWebSocket(
     rawServer,
     options.approvalEvents,
     options.dashboardSessionToken
   );
+  const studioWebSocket = attachStudioWebSocket(
+    rawServer,
+    options.dashboardSessionToken
+  );
+  const stopStudioBroadcast = options.studio.onMessage((sessionId, message) => {
+    studioWebSocket.broadcast({ type: "studio.message", sessionId, message });
+  });
 
   return {
     rawServer,
@@ -133,18 +147,21 @@ export function createAgentMeshHttpServer(options: {
 
       const address = rawServer.address();
       if (!address || typeof address === "string") {
-        throw new Error("AgentMesh HTTP server did not expose a TCP address");
+        throw new Error("Failed to determine HTTP server port.");
       }
+      const port = address.port;
       return {
         host: options.host,
-        port: address.port,
-        mcpUrl: `http://${options.host}:${address.port}/mcp`,
-        dashboardUrl: `http://${options.host}:${address.port}/`
+        port,
+        mcpUrl: `http://${options.host}:${port}/mcp`,
+        dashboardUrl: `http://${options.host}:${port}/`
       };
     },
 
     async close() {
-      closeWebSocket();
+      closeApprovalWebSocket();
+      stopStudioBroadcast();
+      studioWebSocket.close();
       await mcpRouter.close();
       rawServer.closeAllConnections();
       if (!rawServer.listening) {

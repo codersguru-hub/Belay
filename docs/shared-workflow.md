@@ -1,6 +1,6 @@
 # Shared workflow state
 
-AgentMesh gives Codex, Claude Code, Antigravity, and other MCP clients one structured project checklist without synchronizing their private chats or product-specific memories.
+Belay gives Codex, Claude Code, Antigravity, and other MCP clients one structured project checklist without synchronizing their private chats or product-specific memories.
 
 ## State model
 
@@ -24,9 +24,9 @@ AgentMesh gives Codex, Claude Code, Antigravity, and other MCP clients one struc
 
 Place an equivalent instruction in the client's project-level instruction mechanism:
 
-> AgentMesh is the authoritative live workflow and approved knowledge state for this repository. Before planning or editing, read `get_stage_context`. Treat its knowledge block as shared truth, propose stable corrections through `propose_knowledge`, put durable planned work in the checklist, acquire a checklist item before editing, report meaningful progress or blockers, and record completion with verification evidence. Do not infer another agent's state from chat history alone.
+> Belay is the authoritative live workflow and approved knowledge state for this repository. Before planning or editing, read `get_stage_context`. Treat its knowledge block as shared truth, propose stable corrections through `propose_knowledge`, put durable planned work in the checklist, acquire a checklist item before editing, report meaningful progress or blockers, and record completion with verification evidence. Do not infer another agent's state from chat history alone.
 
-For offline operation, keep mandatory repository rules in checked-in instruction files. AgentMesh owns live coordination state; instruction files explain when clients must consult it.
+For offline operation, keep mandatory repository rules in checked-in instruction files. Belay owns live coordination state; instruction files explain when clients must consult it.
 
 ## Mutation rules
 
@@ -41,4 +41,4 @@ For offline operation, keep mandatory repository rules in checked-in instruction
 
 ## Workspace scope
 
-By default, every canonical repository root gets an isolated workspace. Use the same `AGENTMESH_STATE_DIR` and explicit `AGENTMESH_WORKSPACE` name when separate repositories should consume the same workspace-scoped facts. Project-scoped facts remain visible only to their originating repository.
+By default, every canonical repository root gets an isolated workspace. Use the same `BELAY_STATE_DIR` and explicit `BELAY_WORKSPACE` name when separate repositories should consume the same workspace-scoped facts. Project-scoped facts remain visible only to their originating repository.
