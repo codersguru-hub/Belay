@@ -27,10 +27,10 @@ Keep the token figure only when the recording includes a measured before/after c
 ### The “Wow Moment” — Zero-Leak Intercept & Human Approval — 2:00–3:00
 
 - Have Claude request a protected staging deploy such as `pm2 reload` (the current built-in demo uses a safe local staging-reload simulation).
-- Show the Belay cockpit’s amber approval card with masked environment variable names and the immutable SHA-256 action digest.
+- Show the Belay cockpit’s amber approval card with the immutable SHA-256 action digest, target, and policy reason. (`demo-staging-reload` itself needs no vault secret, so it shows no masked variable; run `npm run demo:request-vault-approval` for a card that does.)
 - Click **Approve** once and show the terminal outcome.
 - Run `npm run verify:no-leaks` to prove that the canary secret was not persisted in SQLite, logs, MCP output, dashboard responses, or cloud fixtures.
-- If the host denies the disposable child boundary, show the `indeterminate` fail-closed result; do not present it as a successful production SSH deployment.
+- To show the fail-closed negative case deliberately, run `npm run demo:request-vault-approval` and approve it: the command needs a vault secret, the vault is locked/unconfigured by default, so execution throws `VAULT_LOCKED` and the approval is recorded `indeterminate` -- not silently claimed as a successful production SSH deployment.
 
 ### Google Cloud Run & Gemini Fleet Intelligence — 3:00–3:45
 
@@ -85,7 +85,7 @@ Keep the token figure only when the recording includes a measured before/after c
 
 **Narration:** “Claude Code requests a protected staging reload. Belay freezes the exact command, target, working directory, environment names, policy version, and expiry into one SHA-256 digest. Nothing executes while pending. One human decision authorizes that digest once; replay or mutation is rejected.”
 
-Optional negative beat: show the fail-closed screenshot and explain that an ambiguous execution becomes `indeterminate` and never auto-retries.
+Optional negative beat: run `npm run demo:request-vault-approval`, approve the card, and show the resulting `indeterminate` audit entry live -- or use [`screenshots/belay-cockpit-fail-closed.png`](screenshots/belay-cockpit-fail-closed.png) -- and explain that an ambiguous execution never auto-retries.
 
 ## 2:55–3:30 — Gemini Cloud Arbiter on Cloud Run
 

@@ -160,7 +160,7 @@ The recording should be live and readable at 1080p, show visible Google Cloud pr
 ## Screenshot Shot List
 
 1. `docs/screenshots/belay-cockpit-approval.png` — pending protected-command approval with requester, target, digest, expiry, and policy reason. (`demo-staging-reload` registers no environment variables, so no masked names appear on this specific card; commands that do would show them redacted.)
-2. `docs/screenshots/belay-cockpit-fail-closed.png` — ambiguous execution becomes `indeterminate` and does not silently retry.
+2. `docs/screenshots/belay-cockpit-fail-closed.png` — a real `demo-vault-reload` request, approved while the vault is locked/unconfigured, ending `indeterminate` rather than silently succeeding; reproducible with `npm run demo:request-vault-approval`.
 3. **TODO:** capture the approved knowledge panel beside a pending knowledge proposal, showing project/workspace scope and provenance without repository-sensitive content.
 4. **TODO:** capture exactly-one-winner file contention with owner, path lease, and correlation ID visible.
 5. **TODO:** capture a redaction-reviewed Cloud Run ready revision and Gemini smoke result without account identifiers or credentials.

@@ -1,5 +1,34 @@
 # Belay Build Notes
 
+## 2026-08-21 — Screenshot recapture and reproducible fail-closed evidence
+
+- Discovered `belay-cockpit-v2.png` (the README hero image) had regressed to a screenshot of an
+  unrelated personal project (`mql-generator`), and `belay-cockpit-approval.png` was an exact
+  byte-for-byte duplicate of the orphaned `belay-cockpit.png`, never actually showing a pending
+  approval. Recaptured both against the seeded VPS deployment (`/var/www/belay`) through an SSH
+  tunnel: a fresh hero shot with clean "Belay / belay" branding, and a genuine
+  `demo-staging-reload` approval card (requester, target, digest, expiry, policy reason). Deleted
+  the confirmed-orphaned `belay-cockpit.png`.
+- The existing `belay-cockpit-fail-closed.png` caption claimed the `indeterminate` result came from
+  "the restricted Windows host" denying the disposable demo child's process boundary. Tracing
+  `packages/daemon/src/approval/approval-service.ts` and `command-executor.ts` found that path is
+  not reproducible on this machine: a spawn failure resolves to a normal `spawn_failed` terminal
+  status (mapped to approval status `failed`), not `indeterminate`. The only currently-live path to
+  `indeterminate` is a `VAULT_LOCKED` throw, which none of the four registered commands could
+  trigger (all have empty `environmentVariableNames`).
+- Added `demo-vault-reload`, a companion to `demo-staging-reload` that requires one vault-held
+  environment variable, plus `scripts/request-demo-vault-approval.mjs` and the
+  `demo:request-vault-approval` npm script. Verified locally end to end before deploying: requested
+  it, approved it through the dashboard decision API, and confirmed the audit log recorded
+  `demo-vault-reload · indeterminate`. Deployed to the VPS and recaptured
+  `belay-cockpit-fail-closed.png` from the real Cockpit UI, showing the expanded audit entry
+  (outcome, actor, target, event type, correlation ID, timestamp).
+- This does not contradict the crash-recovery `indeterminate` path already documented in
+  `docs/threat-model.md` (`recoverAmbiguousApprovals` marking an unfinished `executing`/`approved`
+  row after a daemon crash) -- that mechanism is untouched and still real; this entry only concerns
+  how the *screenshot* evidence was produced.
+- Rebuilt and reran the full suite after each change: 56/56 tests passed throughout.
+
 ## 2026-08-20 — Gemini Cloud Arbiter and Fleet Intelligence enhancement
 
 - Preserved the local SQLite-WAL coordination, vault, MCP, approval, and execution core.
