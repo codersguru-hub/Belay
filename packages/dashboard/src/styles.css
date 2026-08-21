@@ -100,7 +100,7 @@
 .context-val{font-size:11px;font-weight:500;color:#94a3b8;font-family:Consolas,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .context-val.highlight{color:#34d399;font-weight:600}
 
-@media(max-width:1100px){.overview-grid{grid-template-columns:1fr}.overview-rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.overview-rail .approval-card{grid-column:1/-1}.command-filter{display:none}.workspace,.workspace:has(.sidebar:not(.collapsed)){grid-template-columns:var(--sidebar-w-collapsed) minmax(0,1fr)}.sidebar:not(.collapsed){display:none}}
+@media(max-width:1180px){.overview-grid{grid-template-columns:1fr}.overview-rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.overview-rail .approval-card{grid-column:1/-1}.command-filter{display:none}.workspace,.workspace:has(.sidebar:not(.collapsed)){grid-template-columns:var(--sidebar-w-collapsed) minmax(0,1fr)}.sidebar:not(.collapsed){display:none}}
 @media(max-width:720px){.topbar{height:62px;padding:0 16px}.workspace{grid-template-columns:1fr}.sidebar{display:none}.cockpit{padding:24px 16px}.page-intro{align-items:flex-start;flex-direction:column}.page-intro h2{font-size:24px}.metric-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric-card{min-height:108px;padding:14px}.coordination-canvas{grid-template-columns:1fr;padding:10px 0}.handoff-line{display:none}.checklist-list,.overview-rail{grid-template-columns:1fr}.panel{padding:17px}.topbar-state .status-pill,.topbar-state .daemon-chip{display:none}.audit-list li{grid-template-columns:55px 7px minmax(0,1fr)}.audit-list code{display:none}.context-footer{grid-template-columns:1fr}}
 /* Topbar left & mode switcher */
 .topbar-left{display:flex;align-items:center;gap:76px}
@@ -1537,11 +1537,30 @@
 .metric-card strong { margin: 8px 0 3px; font-size: 28px; letter-spacing: -.03em; color: #f8fafc; }
 .metric-detail { color: #94a3b8; }
 
-.overview-grid { grid-template-columns: minmax(0, 1fr) 332px; gap: 18px; }
-.overview-primary { gap: 16px; }
-.overview-rail { position: sticky; top: 86px; gap: 12px; align-self: start; }
-.panel { padding: 20px; }
-.rail-panel { padding: 17px; }
+.overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  width: 100%;
+  min-width: 0;
+}
+.overview-primary {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  width: 100%;
+}
+.overview-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-self: start;
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+}
+.panel { padding: 20px; min-width: 0; }
+.rail-panel { padding: 17px; min-width: 0; }
 .panel-heading, .rail-panel-heading, .approval-head { margin-bottom: 15px; }
 .panel-heading h2, .rail-panel h2 { font-size: 16px; font-weight: 700; color: #f8fafc; }
 .eyebrow { color: #64748b; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-family: Consolas, monospace; }
@@ -1549,13 +1568,42 @@
 .coordination-panel {
   background: #0c1322;
   border-color: #1e293b;
+  min-width: 0;
+  overflow: hidden;
 }
-.coordination-canvas { gap: 12px; padding: 14px 2% 2px; }
-.agent-node { min-height: 78px; border-radius: 11px; background: #080e1a; border-color: #1e293b; }
+.coordination-canvas {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px 2% 2px;
+  min-width: 0;
+  width: 100%;
+}
+.agent-node {
+  min-height: 78px;
+  border-radius: 11px;
+  background: #080e1a;
+  border: 1px solid #1e293b;
+  min-width: 0;
+  overflow: hidden;
+}
 .agent-node:hover, .agent-node.selected { border-color: #38bdf8; background: #111c33; }
-.agent-initials, .agent-detail-avatar { background: #1e3a8a; color: #38bdf8; }
+.agent-initials, .agent-detail-avatar { background: #1e3a8a; color: #38bdf8; flex-shrink: 0; }
+.agent-node-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.agent-node-copy strong,
+.agent-node-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-.tasks-panel, .checklist-panel, .audit-panel { background: #0c1322; border-color: #1e293b; }
+.tasks-panel, .checklist-panel, .audit-panel { background: #0c1322; border-color: #1e293b; min-width: 0; }
 .checklist-list { gap: 10px; }
 .checklist-item { background: #080e1a; border-color: #1e293b; }
 .checklist-item:hover { border-color: #334155; }
