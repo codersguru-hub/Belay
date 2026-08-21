@@ -122,11 +122,12 @@ To run the local cockpit:
 
 ```bash
 npm run start
-# equivalently, from inside the cloned repository: npx belay start --open
+# equivalently, to also open the Cockpit automatically:
+node bin/belay.js start --open
 ```
 
-(`belay` is the repository's own bin entry; Belay is not published to the public npm
-registry, so run it from inside the clone rather than as a bare `npx belay` elsewhere.)
+(Run these from inside the cloned repository. Belay is not published to the public npm
+registry, so there is no `npx belay` entry point.)
 
 Then connect MCP clients to `http://127.0.0.1:3420/mcp` (or use 1-click config snippets inside the Cockpit UI). The cockpit is served at `http://127.0.0.1:3420/`.
 

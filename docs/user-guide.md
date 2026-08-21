@@ -28,10 +28,11 @@ The current baseline is **40 passing tests across 11 files**. Run `npm run verif
 Start the local control plane with a single command:
 
 ```bash
-# Starts the control plane and opens the Cockpit in your browser
+# Start the control plane; the Cockpit is served at http://127.0.0.1:3420/
 npm start
-# or via CLI directly:
-npx belay start --open
+
+# ...or start it and open the Cockpit in your browser automatically
+node bin/belay.js start --open
 ```
 
 ### Management CLI Commands
@@ -59,7 +60,7 @@ You can customize parameters via `.belay/config.json`, CLI flags, or environment
 
 ```powershell
 # Custom flags example:
-npx belay start -p 3420 -r "D:\path\to\project" -w "suite-alpha" --open
+node bin/belay.js start -p 3420 -r "D:\path\to\project" -w "suite-alpha" --open
 ```
 
 Open the cockpit at [http://127.0.0.1:3420/](http://127.0.0.1:3420/). The server binds strictly to `127.0.0.1`; do not expose it through a public proxy or port-forward.
@@ -113,12 +114,16 @@ Claude Desktop only supports `stdio` child processes in `claude_desktop_config.j
 {
   "mcpServers": {
     "belay": {
-      "command": "npx",
-      "args": ["-y", "belay", "stdio"]
+      "command": "node",
+      "args": ["/absolute/path/to/Belay/bin/belay-stdio.js"]
     }
   }
 }
 ```
+
+Use the absolute path to your clone. If you have linked the CLI globally (`npm link` from the
+repository root), `"command": "belay", "args": ["stdio"]` works too — that is exactly what
+`node bin/belay.js setup` writes for you automatically.
 
 ### Available MCP Surface
 

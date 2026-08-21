@@ -61,10 +61,11 @@ Timing and manifest hashes are measured, not hard-coded. The Item 11 reference r
 Start Belay with a single command:
 
 ```bash
-# Starts the control plane and automatically opens the Cockpit in your browser
+# Start the control plane; the Cockpit is served at http://127.0.0.1:3420/
 npm start
-# or using the CLI directly:
-npx belay start --open
+
+# ...or start it and open the Cockpit in your browser automatically
+node bin/belay.js start --open
 ```
 
 Initialize project configuration or run environment health diagnostics:
@@ -111,7 +112,7 @@ You can customize parameters via `.belay/config.json`, CLI flags, or environment
 
 ```powershell
 # PowerShell with custom flags:
-npx belay start -p 3420 -w "belay-suite" --open
+node bin/belay.js start -p 3420 -w "belay-suite" --open
 ```
 
 Create the safe disposable approval card from another terminal:

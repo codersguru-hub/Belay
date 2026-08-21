@@ -47,8 +47,8 @@ function printHelp(): void {
 Belay — Local-First Control Plane for Multi-Agent Coding Fleets
 
 Usage:
-  belay [command] [options]
-  belay  [command] [options] (compatibility alias)
+  belay [command] [options]              (after 'npm link')
+  node bin/belay.js [command] [options]  (from a cloned repository)
 
 Commands:
   start          Start the Belay daemon and cockpit (default)
@@ -72,10 +72,10 @@ Options for 'stdio':
   -u, --url <url>            Target Belay daemon MCP URL (default: http://127.0.0.1:3420/mcp)
 
 Examples:
-  npx belay start --open
-  npx belay init
-  npx belay stdio
-  npx belay doctor
+  npm start
+  node bin/belay.js start --open
+  node bin/belay.js init
+  node bin/belay.js doctor
 `);
 }
 
@@ -222,7 +222,8 @@ Connect your AI coding agents:
    Add "http://127.0.0.1:3420/mcp" in MCP Servers panel.
 
 Start the daemon:
-   npx belay start --open
+   npm start
+   (or 'node bin/belay.js start --open' to open the Cockpit automatically)
 `);
 }
 
@@ -371,7 +372,7 @@ async function runStdio(rawArgs: string[]): Promise<void> {
         jsonrpc: "2.0",
         error: {
           code: -32603,
-          message: `Belay daemon is not running or unreachable at ${mcpUrl}. Start the daemon with 'npx belay start'.`
+          message: `Belay daemon is not running or unreachable at ${mcpUrl}. Start the daemon with 'npm start'.`
         },
         id: (message as { id?: string | number }).id ?? undefined
       });
