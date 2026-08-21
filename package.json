@@ -31,6 +31,7 @@
     "benchmark:indexer": "npm run build && node scripts/benchmark-indexer.mjs",
     "smoke:phase1": "node --experimental-strip-types scripts/smoke-phase1.ts",
     "demo:request-approval": "node scripts/request-demo-approval.mjs",
+    "demo:request-vault-approval": "node scripts/request-demo-vault-approval.mjs",
     "demo:verify": "npm run build && vitest run tests/hero-demo.integration.test.ts --reporter=verbose",
     "smoke:cloud": "node scripts/smoke-cloud.mjs",
     "verify:no-leaks": "npm run build && vitest run tests/executor.security.test.ts tests/cloud-egress.integration.test.ts tests/hero-demo.integration.test.ts --reporter=verbose",

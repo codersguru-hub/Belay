@@ -281,6 +281,35 @@ export function defaultCommandTemplates(): CommandTemplate[] {
       maxOutputBytes: 4_096
     },
     {
+      // Demo-only companion to demo-staging-reload: this one requires a vault-held secret.
+      // A human can approve the request, but execution still fails closed with `indeterminate`
+      // if the vault is locked or was never unlocked (its default state) -- proving that Belay
+      // does not silently claim success or auto-retry an ambiguous mutation. See
+      // packages/daemon/src/approval/approval-service.ts's VAULT_LOCKED catch and
+      // tests/executor.security.test.ts's "fails closed when the vault is locked" case.
+      id: "demo-vault-reload",
+      executable: process.execPath,
+      displayExecutable: "node",
+      fixedArguments: [
+        "-e",
+        "process.stdout.write('Simulated vault-backed reload completed.\\n')"
+      ],
+      argumentMode: "none",
+      minimumArguments: 0,
+      maximumArguments: 0,
+      defaultWorkingDirectory: ".",
+      allowedWorkingDirectories: ["."],
+      environmentVariableNames: ["DEMO_VAULT_SECRET"],
+      inheritedEnvironmentVariableNames: [],
+      policyClass: "approval_required",
+      targetAlias: "demo-vault",
+      policyReason: "Reloading this target requires a vault-held secret; execution is refused while the vault is locked or unconfigured.",
+      policyVersion: "local-policy-v1",
+      approvalTtlMilliseconds: 5 * 60 * 1000,
+      timeoutMilliseconds: 5_000,
+      maxOutputBytes: 4_096
+    },
+    {
       // Placeholder for the "team" (multi-agent orchestration) target only. Real single-agent
       // dispatch uses the claude-dispatch / codex-dispatch / antigravity-dispatch templates below.
       id: "agent-dispatch",
